@@ -9,7 +9,7 @@ PROVIDES += "u-boot"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://COPYING;md5=1707d6db1d42237583f50183a5651ecb"
 
-PR = "r1"
+PR = "r2"
 
 SRCREV = "2536850d7cd90bdb75bf3ff86838f913392b68db"
 SRC_URI = "git://git.denx.de/u-boot"
