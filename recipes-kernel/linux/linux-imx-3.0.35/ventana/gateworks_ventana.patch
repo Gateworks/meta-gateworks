@@ -3186,10 +3186,10 @@ index 5cac9bc..a4a46e5 100644
 +obj-$(CONFIG_PCI_MSI) += msi.o
 diff --git a/arch/arm/mach-mx6/board-mx6q_gwventana.c b/arch/arm/mach-mx6/board-mx6q_gwventana.c
 new file mode 100644
-index 0000000..5e93ce5
+index 0000000..396117e
 --- /dev/null
 +++ b/arch/arm/mach-mx6/board-mx6q_gwventana.c
-@@ -0,0 +1,1872 @@
+@@ -0,0 +1,1875 @@
 +/*
 + * Copyright (C) 2013 Gateworks Corporation All Rights Reserved.
 + *
@@ -4151,9 +4151,9 @@ index 0000000..5e93ce5
 +static void mx6q_ventana_flexcan0_switch(int enable)
 +{
 +	if (enable) {
-+		gpio_set_value(MX6Q_VENTANA_CAN_STBY, 1);
-+	} else {
 +		gpio_set_value(MX6Q_VENTANA_CAN_STBY, 0);
++	} else {
++		gpio_set_value(MX6Q_VENTANA_CAN_STBY, 1);
 +	}
 +}
 +
@@ -4996,6 +4996,9 @@ index 0000000..5e93ce5
 +		if (info->config_flexcan) {
 +			mxc_iomux_v3_setup_multiple_pads(mx6q_ventana_flexcan_pads,
 +				ARRAY_SIZE(mx6q_ventana_flexcan_pads));
++			gpio_request(MX6Q_VENTANA_CAN_STBY, "can0_stby");
++			gpio_direction_output(MX6Q_VENTANA_CAN_STBY, 0);
++			gpio_set_value(MX6Q_VENTANA_CAN_STBY, 1);
 +			imx6q_add_flexcan0(&mx6q_ventana_flexcan0_pdata);
 +		}
 +

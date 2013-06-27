@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-PRINC := "${@int(PRINC) + 11}"
+PRINC := "${@int(PRINC) + 12}"
 
 COMPATIBLE_MACHINE = "(mx6)"
 
