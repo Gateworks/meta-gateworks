@@ -5858,7 +5858,7 @@ index 0000000..dd6416e
 +	return i2c_register_board_info(1, &pfuze100_i2c_device, 1);
 +}
 diff --git a/arch/arm/mach-mx6/pcie.c b/arch/arm/mach-mx6/pcie.c
-index f39dd3d..a8ae9e3 100644
+index f39dd3d..e1001df 100644
 --- a/arch/arm/mach-mx6/pcie.c
 +++ b/arch/arm/mach-mx6/pcie.c
 @@ -21,7 +21,6 @@
@@ -6083,7 +6083,7 @@ index f39dd3d..a8ae9e3 100644
 +			return 0;
 +		return ((u32)dbi_base) + (where & 0x0ffc);
 +	}
-+	if ((devfn > 0xff) || (bus->number > 15))
++	if ((devfn > 0xff) || (bus->number > 32))
 +		return 0;
 +	busnum = bus->number - 1;
 +	if ((busnum < 3) && (devfn <= 3)) {
