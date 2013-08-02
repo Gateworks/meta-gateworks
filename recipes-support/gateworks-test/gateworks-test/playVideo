@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# Gateworks Corporation
+# psidhu@gateworks.com
+
+# Print usage and exit
+# $1 if opt error
+print_usage() {
+    [ "$1" ] && echo "Bad $1"
+
+    echo "Pipes video from a source pattern to specified sink"
+    echo "usage:"
+    echo "playVideo [-h] -l <file location> -d <device>"
+    echo " -h                  This help message"
+    echo " -l <file location>  Path to file"
+    echo " -d <device>         Device to output video to"
+    echo ""
+    echo "Example Usage:"
+    echo " playVideo -l hello_world.avi -d /dev/video16"
+    exit 1
+}
+
+FILE_LOC=
+DEVICE=
+
+while getopts :l:d: opt
+do
+    case "$opt" in
+        l) FILE_LOC=$OPTARG;;
+        d) DEVICE=$OPTARG;;
+        :) echo "-$OPTARG requires an argument"
+           print_usage;;
+        *) print_usage;;
+    esac
+done
+
+[ "$FILE_LOC" ] || print_usage
+[ "$DEVICE"   ] || print_usage
+
+if [ "$DEVICE" == "/dev/video16" ]; then
+    echo 0 > /sys/class/graphics/fb0/blank
+elif [ "$DEVICE" == "/dev/video17" ]; then
+    echo 0 > /sys/class/graphics/fb1/blank
+elif [ "$DEVICE" == "/dev/video18" ]; then
+    echo 0 > /sys/class/graphics/fb2/blank
+elif [ "$DEVICE" == "/dev/video19" ]; then
+    echo 0 > /sys/class/graphics/fb3/blank
+elif [ "$DEVICE" == "/dev/video20" ]; then
+    echo 0 > /sys/class/graphics/fb4/blank
+else
+    print_usage "$DEVICE"
+fi
+
+amixer sset PCM 100%
+
+gst-launch filesrc location=$FILE_LOC typefind=true             \
+    ! aiurdemux name=d                                          \
+    ! queue max-size-bytes=0 max-size-time=0 max-size-buffers=0 \
+    ! mfw_aacdecoder                                            \
+    ! alsasink d.                                               \
+    ! queue max-size-bytes=0 max-size-time=0 max-size-buffers=0 \
+    ! vpudec ! mfw_v4lsink device=$DEVICE

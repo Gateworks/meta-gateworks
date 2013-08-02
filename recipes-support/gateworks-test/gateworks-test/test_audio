@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Gateworks Corporation
+# psidhu@gateworks.com
+
+# This script assumes the device is inserted before being called
+
+# Print usage and exit
+print_usage() {
+    echo "Pipes audio from default source to default sink until ^C"
+    echo "usage:"
+    echo "test_audio [-h]"
+    echo " -h, --help    This help Message"
+    exit 1
+}
+
+HELP="$1"
+
+trap echo "" INT
+
+[ "$HELP" ] && print_usage
+
+# Move asound config file
+mv /etc/asound.conf /etc/asound.conf.orig
+
+# Set the proper mixer values for line_in audio
+amixer -q sset "Capture Mux" LINE_IN
+amixer -q sset "Line In Function" on
+amixer -q sset "Capture" 0
+amixer -q sset "PCM" 100%
+
+# Audio pipeline
+gst-launch -q alsasrc ! alsasink
+mv /etc/asound.conf.orig /etc/asound.conf
+exit 0
+

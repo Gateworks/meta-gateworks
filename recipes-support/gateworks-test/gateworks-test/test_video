@@ -1,0 +1,84 @@
+#!/bin/sh
+# psidhu@gateworks.com
+# This script assumes the device is inserted before being called
+
+# Print usage and exit
+# $1 if opt error
+print_usage() {
+    [ "$1" ] && echo "Invalid option: -$1"
+
+    echo "Pipes video from a source pattern to specified sink"
+    echo "usage:"
+    echo "test_video [OPTIONS]"
+    echo " -h                  This help message"
+    echo " -f <frame-buffer>   Frame-buffer number (0, 1, 2, ...) to output to"
+    echo "                     Defaults to 0"
+    echo " -p <pattern>        Which pattern from 0-20, defaults to 0"
+    echo " -b                  Blank all other screens before video output"
+    echo " -c <pipeline>       Executes gst-launch <pipeline>"
+    echo " -u                  Leave frame-buffer unblanked"
+    echo ""
+    echo "Example Usage:"
+    echo " test_video -b -f 2"
+    exit 1
+}
+
+FB=0
+PATTERN=0
+BLANK_ME=
+PIPELINE=
+UNBLANK=
+
+# Trap sigint
+trap echo "" 2
+
+while getopts :f:p:bc:u opt
+do
+    case "$opt" in
+        f) FB=$OPTARG;;
+        p) PATTERN=$OPTARG;;
+        b) BLANK_ME=/sys/class/graphics/fb*;;
+        c) PIPELINE=$OPTARG;;
+        u) UNBLANK=1;;
+        :) echo "-$OPTARG requires an argument "
+           print_usage
+           ;;
+        *) print_usage;;
+    esac
+done
+
+for i in $BLANK_ME; do
+    [ -r $i/blank ] && {
+        echo 1 > $i/blank
+    }
+done
+
+# Forced to go to it's corresponding display if not testing input
+# Also restrict the frame-buffer device
+if [ "$FB" -eq 0 ]; then
+    DEV=/dev/video16
+elif [ "$FB" -eq 1 ]; then
+    DEV=/dev/video17
+elif [ "$FB" -eq 2 ]; then
+    DEV=/dev/video18
+elif [ "$FB" -eq 3 ]; then
+    DEV=/dev/video19
+elif [ "$FB" -eq 4 ]; then
+    DEV=/dev/video20
+else
+    print_usage
+fi
+
+echo 0 > /sys/class/graphics/fb$FB/blank
+
+if [ "$PIPELINE" ]; then
+    gst-launch "$PIPELINE"
+else
+    gst-launch -e videotestsrc pattern=$PATTERN ! mfw_v4lsink device=$DEV
+fi
+
+[ "$UNBLANK" ] || {
+    echo 1 > /sys/class/graphics/fb$FB/blank
+}
+
+exit 0
