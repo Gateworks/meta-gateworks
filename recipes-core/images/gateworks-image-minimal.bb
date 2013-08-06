@@ -1,4 +1,4 @@
-require /usr/src/psidhu/oe/sources/poky/meta/recipes-core/images/core-image-base.bb
+require recipes-core/images/core-image-base.bb
 
 DESCRIPTION = "A very Minimal gateworks Ventana image "
 
