@@ -1,24 +1,38 @@
 #!/bin/sh
 
 # Gateworks Corporation
-# psidhu@gateworks.com
 
 # This script assumes the device is inserted before being called
 
 # Print usage and exit
 print_usage() {
     echo "Pipes audio from default source to default sink until ^C"
-    echo "usage:"
-    echo "test_audio [-h]"
-    echo " -h, --help    This help Message"
+    echo -n "usage:"
+    echo " test_audio [OPTIONS]"
+    echo " -h, --help      This help Message"
+    echo " -p <\"pipeline\"> Execute gst-launch <\"pipeline\">"
+    echo " -s <\"source\">   Set the audio source, defaults to alsasrc"
+    echo " -S <\"sink\">     Set the audio sink, defaults to alsasink"
     exit 1
 }
 
-HELP="$1"
+AUDIOSRC=
+AUDIOSINK=
+PIPELINE=
+while getopts :a:A:p: opt
+do
+    case "$opt" in
+	a) AUDIOSRC=$OPTARG;;
+	A) AUDIOSINK=$OPTARG;;
+	p) PIPELINE=$OPTARG;;
+	:) echo "-$OPTARG requires an argument"
+	   print_usage
+	   ;;
+	*) print_usage;;
+    esac
+done
 
-trap echo "" INT
-
-[ "$HELP" ] && print_usage
+trap echo "" SIGINT
 
 # Move asound config file
 mv /etc/asound.conf /etc/asound.conf.orig
@@ -30,7 +44,20 @@ amixer -q sset "Capture" 0
 amixer -q sset "PCM" 100%
 
 # Audio pipeline
-gst-launch -q alsasrc ! alsasink
+
+if [ "$AUDIOSRC" ]; then
+    if [ "$AUDIOSINK" ]; then
+	gst-launch $AUDIOSRC ! $AUDIOSINK
+    else
+	gst-launch -q $AUDIOSRC ! alsasink
+    fi
+elif [ "$AUDIOSINK" ]; then
+    gst-launch -q alsasrc ! $AUDIOSINK
+elif [ "$PIPELINE" ]; then
+    gst-launch $PIPELINE
+else
+    gst-launch -q alsasrc ! alsasink
+fi
+
 mv /etc/asound.conf.orig /etc/asound.conf
 exit 0
-

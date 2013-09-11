@@ -3,11 +3,17 @@ LICENSE = "GPLv3"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-3.0;md5=c79ff39f19dfec6d293b95dea7b07891"
 
 SECTION = "console/utils"
-RDEPENDS = "gstreamer gst-plugins-base                       \
-	 gst-plugins-base-videotestsrc gst-fsl-plugin        \
-	 gst-plugins-base-audiotestsrc gst-plugins-base-alsa \
-	 alsa-utils alsa-lib alsa-state                      \
-         fb-test"
+RDEPENDS = " \
+        packagegroup-fsl-gstreamer                                   \
+	gst-plugins-base-alsa alsa-utils alsa-lib alsa-state         \
+        gst-meta-video gst-meta-audio gst-meta-base                  \
+        gst-plugins-base-videotestsrc gst-plugins-base-audiotestsrc  \
+        gst-plugins-base-tcp                                         \
+        gst-plugins-good-id3demux                                    \
+        gst-plugins-bad                                              \
+        gst-fsl-plugin-gplay gst-plugins-ugly                        \
+	fb-test fbset                                                \
+       "
 DESTDIR = "/usr/bin"
 
 PR = "r0"
