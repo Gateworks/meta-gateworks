@@ -1,5 +1,4 @@
 #!/bin/sh
-# psidhu@gateworks.com
 # This script assumes the device is inserted before being called
 
 # Print usage and exit
@@ -8,37 +7,44 @@ print_usage() {
     [ "$1" ] && echo "Invalid option: -$1"
 
     echo "Pipes video from a source pattern to specified sink"
-    echo "usage:"
-    echo "test_video [OPTIONS]"
-    echo " -h                  This help message"
-    echo " -f <frame-buffer>   Frame-buffer number (0, 1, 2, ...) to output to"
-    echo "                     Defaults to 0"
-    echo " -p <pattern>        Which pattern from 0-20, defaults to 0"
-    echo " -b                  Blank all other screens before video output"
-    echo " -c <pipeline>       Executes gst-launch <pipeline>"
-    echo " -u                  Leave frame-buffer unblanked"
+    echo -n "usage:"
+    echo " test_video [OPTIONS]"
+    echo " -h                   This help message"
+    echo " -f <frame-buffer>    Frame-buffer number (0, 1, 2, ...) to output to"
+    echo "                      Defaults to 0"
+    echo " -p <pattern>         Which pattern from 0-20, defaults to 0"
+    echo " -b                   Blank all other screens before video output"
+    echo " -c <\"pipeline\">      Executes gst-launch <pipeline>"
+    echo " -s <\"videotestsrc\">  Set video source, defaults to videotestsrc"
+    echo " -S <\"videotestsink\"> Set video sink, defaults to mfw_v4lsink"
+    echo " -u                   Leave frame-buffer unblanked"
     echo ""
     echo "Example Usage:"
     echo " test_video -b -f 2"
+
     exit 1
 }
 
 FB=0
 PATTERN=0
+VIDEOSRC=
+VIDEOSINK=
 BLANK_ME=
 PIPELINE=
 UNBLANK=
 
 # Trap sigint
-trap echo "" 2
+trap echo "" SIGINT
 
-while getopts :f:p:bc:u opt
+while getopts :f:p:bc:us:S: opt
 do
     case "$opt" in
         f) FB=$OPTARG;;
         p) PATTERN=$OPTARG;;
         b) BLANK_ME=/sys/class/graphics/fb*;;
         c) PIPELINE=$OPTARG;;
+	s) VIDEOSRC=$OPTARG;;
+	S) VIDEOSINK=$OPTARG;;
         u) UNBLANK=1;;
         :) echo "-$OPTARG requires an argument "
            print_usage
@@ -56,25 +62,41 @@ done
 # Forced to go to it's corresponding display if not testing input
 # Also restrict the frame-buffer device
 if [ "$FB" -eq 0 ]; then
-    DEV=/dev/video16
+    echo 0 > /sys/class/graphics/fb0/blank
+    DEV_V4L=/dev/video16
 elif [ "$FB" -eq 1 ]; then
-    DEV=/dev/video17
+    echo 0 > /sys/class/graphics/fb0/blank
+    DEV_V4L=/dev/video17
 elif [ "$FB" -eq 2 ]; then
-    DEV=/dev/video18
+    echo 0 > /sys/class/graphics/fb2/blank
+    DEV_V4L=/dev/video18
 elif [ "$FB" -eq 3 ]; then
-    DEV=/dev/video19
+    echo 0 > /sys/class/graphics/fb2/blank
+    DEV_V4L=/dev/video19
 elif [ "$FB" -eq 4 ]; then
-    DEV=/dev/video20
+    echo 0 > /sys/class/graphics/fb4/blank
+    DEV_V4L=/dev/video20
 else
     print_usage
 fi
 
-echo 0 > /sys/class/graphics/fb$FB/blank
-
 if [ "$PIPELINE" ]; then
+    echo "Executing gst-launch $PIPELINE"
     gst-launch "$PIPELINE"
+elif [ "$VIDEOSRC" ]; then
+    if [ "$VIDEOSINK" ]; then
+    echo "Executing gst-launch $VIDEOSRC ! $VIDEOSINK"
+	gst-launch -e $VIDEOSRC ! $VIDEOSINK
+    else
+    echo "Executing gst-launch $VIDEOSRC ! mfw_v4lsink device=$DEV_V4L"
+	gst-launch -e $VIDEOSRC ! mfw_v4lsink device=$DEV_V4L
+    fi
+elif [ "$VIDEOSINK" ]; then
+    echo "Executing gst-launch videotestsrc pattern=$PATTERN ! $VIDEOSINK"
+    gst-launch -e videotestsrc pattern=$PATTERN ! $VIDEOSINK
 else
-    gst-launch -e videotestsrc pattern=$PATTERN ! mfw_v4lsink device=$DEV
+    echo "Executing gst-launch videotestsrc pattern=$PATTERN ! mfw_v4lsink device=$DEV_V4L"
+    gst-launch -e videotestsrc pattern=$PATTERN ! mfw_v4lsink device=$DEV_V4L
 fi
 
 [ "$UNBLANK" ] || {
