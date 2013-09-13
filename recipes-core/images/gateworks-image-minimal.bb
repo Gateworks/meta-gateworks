@@ -1,14 +1,11 @@
 require recipes-core/images/core-image-base.bb
 
-DESCRIPTION = "A minimal Gateworks Ventana image"
+DESCRIPTION = "A minimal Gateworks image"
 
 LICENSE = "GPLv3"
 
-# Include certain kernel modules
-IMAGE_INSTALL_append_ventana += "kernel-module-sky2 canutils"
-
-# Autoload sky2 on boot
-module_autoload_sky2 = "sky2"
+# Include certain utilities
+IMAGE_INSTALL_append_ventana += "canutils"
 
 # file system tools
 IMAGE_INSTALL += "\
@@ -17,8 +14,8 @@ IMAGE_INSTALL += "\
 
 # Testing tools for i2cget, lspci etc
 IMAGE_INSTALL_append += "\
-	i2c-tools mtd-utils pciutils usbutils fb-test fbset \
-	iperf                                               \
+	i2c-tools pciutils usbutils fb-test fbset    \
+	iperf                                        \
 	"
 
 # Other stuff we want available en masse
@@ -27,6 +24,9 @@ IMAGE_INSTALL_append += "\
 	fsl-rc-local nbench-byte wireless-tools      \
 	compat-wireless-all                          \
 	"
+
+# Remove udev caching
+ROOTFS_POSTPROCESS_COMMAND += "rm -rf ${IMAGE_ROOTFS}/etc/default/udev ; "
 
 # EXTRA
 IMAGE_INSTALL_append += "screen nano bash"
