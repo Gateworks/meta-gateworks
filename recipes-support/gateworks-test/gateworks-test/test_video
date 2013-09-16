@@ -1,5 +1,4 @@
 #!/bin/sh
-# This script assumes the device is inserted before being called
 
 # Print usage and exit
 # $1 if opt error
@@ -14,6 +13,7 @@ print_usage() {
     echo "                      Defaults to 0"
     echo " -p <pattern>         Which pattern from 0-20, defaults to 0"
     echo " -b                   Blank all other screens before video output"
+    echo " -o <pattern>         Overlay 'pattern' to frame-buffer+1"
     echo " -c <\"pipeline\">      Executes gst-launch <pipeline>"
     echo " -s <\"videotestsrc\">  Set video source, defaults to videotestsrc"
     echo " -S <\"videotestsink\"> Set video sink, defaults to mfw_v4lsink"
@@ -32,21 +32,23 @@ VIDEOSINK=
 BLANK_ME=
 PIPELINE=
 UNBLANK=
+OVERLAY=
 
 # Trap sigint
-trap echo "" SIGINT
+trap "exit 0;" SIGINT SIGTERM
 
-while getopts :f:p:bc:us:S: opt
+while getopts :f:p:bc:us:S:o: opt
 do
     case "$opt" in
         f) FB=$OPTARG;;
         p) PATTERN=$OPTARG;;
         b) BLANK_ME=/sys/class/graphics/fb*;;
+	o) OVERLAY=$OPTARG;;
         c) PIPELINE=$OPTARG;;
 	s) VIDEOSRC=$OPTARG;;
 	S) VIDEOSINK=$OPTARG;;
         u) UNBLANK=1;;
-        :) echo "-$OPTARG requires an argument "
+        :) echo "-$OPTARG requires an argument"
            print_usage
            ;;
         *) print_usage;;
@@ -59,25 +61,55 @@ for i in $BLANK_ME; do
     }
 done
 
-# Forced to go to it's corresponding display if not testing input
-# Also restrict the frame-buffer device
-if [ "$FB" -eq 0 ]; then
-    echo 0 > /sys/class/graphics/fb0/blank
-    DEV_V4L=/dev/video16
-elif [ "$FB" -eq 1 ]; then
-    echo 0 > /sys/class/graphics/fb0/blank
-    DEV_V4L=/dev/video17
-elif [ "$FB" -eq 2 ]; then
-    echo 0 > /sys/class/graphics/fb2/blank
-    DEV_V4L=/dev/video18
-elif [ "$FB" -eq 3 ]; then
-    echo 0 > /sys/class/graphics/fb2/blank
-    DEV_V4L=/dev/video19
-elif [ "$FB" -eq 4 ]; then
-    echo 0 > /sys/class/graphics/fb4/blank
-    DEV_V4L=/dev/video20
+# Note: device driver does not properly reset when input device is removed
+# (sync is lost).
+# We call the v4l2-ctl command to try and force detection of signal lock.
+if type v4l2-ctl > /dev/null; then
+    break_flag=0
+    if [[ "$VIDEOSRC" == *"tvsrc"* ]]; then
+	echo "Waiting for input device to be detected..."
+	break_flag=1
+    else
+	echo "Skipping detection of input source..."
+    fi
+
+    hdmi_reg=""
+    analog_reg1=""
+    analog_reg2=""
+    while [ $break_flag -eq 1 ]; do
+	hdmi_reg=$(i2cget -f -y 2 0x48 0x20 2> /dev/null)
+	if [[ $hdmi_reg != "0x00" && $hdmi_reg != "" ]]; then
+	    echo "HDMI Input Detected"
+	    sleep 2
+	    break_flag=0
+	fi
+
+	v4l2-ctl -d /dev/video0 --get-fmt-video &>/dev/null
+	v4l2-ctl -d /dev/video1 --get-fmt-video &>/dev/null
+	analog_reg1=$(i2cget -f -y 2 0x20 0x10 2> /dev/null)
+	analog_reg2=$(i2cget -f -y 2 0x20 0x10 2> /dev/null)
+	if [[ $analog_reg1 == "0x0f" || $analog_reg2 == "0x0f" ]]; then
+	    echo "Analog Input Detected"
+	    sleep 2
+	    break_flag=0
+	fi
+    done
 else
+    echo "This system does not have v4l2-ctl, assuming an input device has"
+    echo "been inserted if required."
+fi
+
+if [ "$FB" -gt 4 ]; then
+    echo "Frame-buffer must be from 0-4"
     print_usage
+fi
+
+echo 0 > /sys/class/graphics/fb$FB/blank
+DEV_V4L=/dev/video$((FB+16))
+
+# Background the overlay
+if [ "$OVERLAY" ]; then
+    (gst-launch -e videotestsrc pattern=$OVERLAY ! mfw_v4lsink device=/dev/video$((FB+16+1))) &
 fi
 
 if [ "$PIPELINE" ]; then
@@ -103,4 +135,4 @@ fi
     echo 1 > /sys/class/graphics/fb$FB/blank
 }
 
-exit 0
+exit 1

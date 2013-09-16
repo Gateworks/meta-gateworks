@@ -10,6 +10,8 @@ print_usage() {
     echo -n "usage:"
     echo " test_audio [OPTIONS]"
     echo " -h, --help      This help Message"
+    echo " -i <device>     Input sound device. Defaults to hw:0,0"
+    echo " -o <device>     Output sound device. Defaults to hw:0,0"
     echo " -p <\"pipeline\"> Execute gst-launch <\"pipeline\">"
     echo " -s <\"source\">   Set the audio source, defaults to alsasrc"
     echo " -S <\"sink\">     Set the audio sink, defaults to alsasink"
@@ -19,11 +21,16 @@ print_usage() {
 AUDIOSRC=
 AUDIOSINK=
 PIPELINE=
-while getopts :a:A:p: opt
+INPUT_DEV=hw:0,0
+OUTPUT_DEV=hw:0,0
+
+while getopts i:o:s:S:p: opt
 do
     case "$opt" in
-	a) AUDIOSRC=$OPTARG;;
-	A) AUDIOSINK=$OPTARG;;
+	i) INPUT_DEV=$OPTARG;;
+	o) OUTPUT_DEV=$OPTARG;;
+	s) AUDIOSRC=$OPTARG;;
+	S) AUDIOSINK=$OPTARG;;
 	p) PIPELINE=$OPTARG;;
 	:) echo "-$OPTARG requires an argument"
 	   print_usage
@@ -32,32 +39,39 @@ do
     esac
 done
 
-trap echo "" SIGINT
+# Trap some signals
+trap "mv /etc/asound.conf.orig /etc/asound.conf; exit 0;" SIGINT SIGTERM
 
 # Move asound config file
 mv /etc/asound.conf /etc/asound.conf.orig
 
 # Set the proper mixer values for line_in audio
-amixer -q sset "Capture Mux" LINE_IN
-amixer -q sset "Line In Function" on
-amixer -q sset "Capture" 0
-amixer -q sset "PCM" 100%
+for i in 0 1; do
+    echo "Setting up amixer settings for device $i"
+    amixer -c $i -q sset "Capture Mux" LINE_IN 2>/dev/null
+    amixer -c $i -q sset "Line In Function" on 2>/dev/null
+    amixer -c $i -q sset "Capture" 0 2>/dev/null
+    amixer -c $i -q sset "PCM" 100% 2>/dev/null
+done
+
+# Use gstreamer to reset any hardware before actually running the pipeline
+(gst-launch alsasrc ! alsasink) & gst_pid=$!
+kill -9 $gst_pid
 
 # Audio pipeline
-
 if [ "$AUDIOSRC" ]; then
     if [ "$AUDIOSINK" ]; then
 	gst-launch $AUDIOSRC ! $AUDIOSINK
     else
-	gst-launch -q $AUDIOSRC ! alsasink
+	gst-launch -q $AUDIOSRC ! alsasink device=$OUTPUT_DEV
     fi
 elif [ "$AUDIOSINK" ]; then
-    gst-launch -q alsasrc ! $AUDIOSINK
+    gst-launch -q alsasrc device=$INPUT_DEV ! $AUDIOSINK
 elif [ "$PIPELINE" ]; then
     gst-launch $PIPELINE
 else
-    gst-launch -q alsasrc ! alsasink
+    gst-launch -q alsasrc device=$INPUT_DEV ! alsasink device=$OUTPUT_DEV
 fi
 
 mv /etc/asound.conf.orig /etc/asound.conf
-exit 0
+exit 1
