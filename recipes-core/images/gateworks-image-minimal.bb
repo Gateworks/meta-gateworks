@@ -14,15 +14,16 @@ IMAGE_INSTALL += "\
 
 # Testing tools for i2cget, lspci etc
 IMAGE_INSTALL_append += "\
-	i2c-tools pciutils usbutils fb-test fbset    \
-	iperf                                        \
+	i2c-tools pciutils usbutils fb-test fbset iperf \
 	"
 
-# Other stuff we want available en masse
+IMAGE_FEATURES += "package-management"
+
+# Useful tools
 IMAGE_INSTALL_append += "\
-	wget evtest memtester dropbear kobs-ng       \
-	fsl-rc-local nbench-byte wireless-tools      \
-	compat-wireless-all                          \
+	wget evtest memtester dropbear kobs-ng          \
+	fsl-rc-local nbench-byte wireless-tools         \
+	compat-wireless-all opkg                        \
 	"
 
 # Remove udev caching

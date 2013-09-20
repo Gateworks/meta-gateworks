@@ -4,7 +4,7 @@ DESCRIPTION = "Gateworks Test Image"
 
 # test tools
 IMAGE_INSTALL += "\
-        gateworks-test \
+        gateworks-test v4l-utils \
 	"
 
 IMAGE_ROOTFS_SIZE = "8192"
@@ -13,11 +13,10 @@ IMAGE_ROOTFS_SIZE = "8192"
 ROOTFS_POSTPROCESS_COMMAND += "remove_packaging_data_files ; "
 
 ## Required for video/audio tests in gateworks-test package ##
-# INTERNAL
 IMAGE_INSTALL_append +="\
-	gstreamer \
+	gstreamer                                                   \
 	gst-plugins-base-videotestsrc gst-plugins-base-audiotestsrc \
-	gst-plugins-base-alsa \
+	gst-plugins-base-alsa alsa-utils alsa-lib alsa-state        \
 	"
 
 # Firmware
