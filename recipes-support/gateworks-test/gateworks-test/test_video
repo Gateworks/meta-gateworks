@@ -1,138 +1,174 @@
-#!/bin/sh
+#!/bin/bash
+#
+# front-end to gstreamer for testing common video in/out scenarios
 
 # Print usage and exit
 # $1 if opt error
 print_usage() {
-    [ "$1" ] && echo "Invalid option: -$1"
+	[ "$1" ] && echo "Invalid option: -$1"
 
-    echo "Pipes video from a source pattern to specified sink"
-    echo -n "usage:"
-    echo " test_video [OPTIONS]"
-    echo " -h                   This help message"
-    echo " -f <frame-buffer>    Frame-buffer number (0, 1, 2, ...) to output to"
-    echo "                      Defaults to 0"
-    echo " -p <pattern>         Which pattern from 0-20, defaults to 0"
-    echo " -b                   Blank all other screens before video output"
-    echo " -o <pattern>         Overlay 'pattern' to frame-buffer+1"
-    echo " -c <\"pipeline\">      Executes gst-launch <pipeline>"
-    echo " -s <\"videotestsrc\">  Set video source, defaults to videotestsrc"
-    echo " -S <\"videotestsink\"> Set video sink, defaults to mfw_v4lsink"
-    echo " -u                   Leave frame-buffer unblanked"
-    echo ""
-    echo "Example Usage:"
-    echo " test_video -b -f 2"
+	echo "Pipes video from a source pattern to specified sink"
+	echo -n "usage:"
+	echo " $0 [OPTIONS]"
+	echo " -h                This help message"
+	echo " -i <device>       Input device (/dev/video) (0, 1, 2, ...) Defaults to 0"
+	echo " -o <framebuffer>  Output framebuffer (/dev/fb) (0, 1, 2, ...) Defaults to 0"
+	echo " -p <pattern>      Which pattern from 0-20, defaults to 0"
+	echo " -b                Blank all other screens before video output"
+	echo " -B <pattern>      Background Overlay 'pattern' to frame-buffer+1"
+	echo " -c <pipeline>     Executes gst-launch <pipeline>"
+	echo " -I <src>          Set gstreamer src plugin, defaults to videotestsrc"
+	echo " -O <sink>         Set gstreamer sink plugin, defaults to mfw_v4lsink"
+	echo " -u                Leave frame-buffer unblanked"
+	echo ""
+	echo "Example Usage:"
+	echo " $0 -o 2 # output colorbar test pattern to /dev/fb2"
+	echo " $0 -i 0 -o 0 -B 18 # HDMI video in (/dev/video0) to HDMI video out (/dev/fb0) with overlay"
+	echo " $0 -i 1 -o 0 -B 18 # Analog video in (/dev/video1) to HDMI video out (/dev/fb0) with overlay"
+	echo " $0 -i 1 -o 2 -B 18 # Analog video in (/dev/video1) to Analog video out (/dev/fb2) with overlay"
 
-    exit 1
+	exit 1
 }
 
-FB=0
+OUTFB=0
+INDEV=
 PATTERN=0
 VIDEOSRC=
-VIDEOSINK=
+VIDEOSINK=mfw_v4lsink
 BLANK_ME=
 PIPELINE=
 UNBLANK=
 OVERLAY=
+PID_BG=
+PID_BLANK=
 
-# Trap sigint
-trap "exit 0;" SIGINT SIGTERM
-
-while getopts :f:p:bc:us:S:o: opt
+while getopts :o:i:p:bc:B:I:O:u opt
 do
-    case "$opt" in
-        f) FB=$OPTARG;;
-        p) PATTERN=$OPTARG;;
-        b) BLANK_ME=/sys/class/graphics/fb*;;
-	o) OVERLAY=$OPTARG;;
-        c) PIPELINE=$OPTARG;;
-	s) VIDEOSRC=$OPTARG;;
-	S) VIDEOSINK=$OPTARG;;
-        u) UNBLANK=1;;
-        :) echo "-$OPTARG requires an argument"
-           print_usage
-           ;;
-        *) print_usage;;
-    esac
+	case "$opt" in
+	o) OUTFB=$OPTARG;;
+	i) INDEV=$OPTARG;;
+	p) PATTERN=$OPTARG;;
+	b) BLANK_ME=/sys/class/graphics/fb*;;
+	c) PIPELINE=$OPTARG;;
+	B) OVERLAY=$OPTARG;;
+	I) VIDEOSRC=$OPTARG;;
+	O) VIDEOSINK=$OPTARG;;
+	u) UNBLANK=1;;
+	:) echo "-$OPTARG requires an argument"
+		print_usage
+		;;
+	*) print_usage;;
+	esac
 done
 
-for i in $BLANK_ME; do
-    [ -r $i/blank ] && {
-        echo 1 > $i/blank
-    }
-done
-
-# Note: device driver does not properly reset when input device is removed
-# (sync is lost).
-# We call the v4l2-ctl command to try and force detection of signal lock.
-if type v4l2-ctl > /dev/null; then
-    break_flag=0
-    if [[ "$VIDEOSRC" == *"tvsrc"* ]]; then
-	echo "Waiting for input device to be detected..."
-	break_flag=1
-    else
-	echo "Skipping detection of input source..."
-    fi
-
-    hdmi_reg=""
-    analog_reg1=""
-    analog_reg2=""
-    while [ $break_flag -eq 1 ]; do
-	hdmi_reg=$(i2cget -f -y 2 0x48 0x20 2> /dev/null)
-	if [[ $hdmi_reg != "0x00" && $hdmi_reg != "" ]]; then
-	    echo "HDMI Input Detected"
-	    sleep 2
-	    break_flag=0
-	fi
-
-	v4l2-ctl -d /dev/video0 --get-fmt-video &>/dev/null
-	v4l2-ctl -d /dev/video1 --get-fmt-video &>/dev/null
-	analog_reg1=$(i2cget -f -y 2 0x20 0x10 2> /dev/null)
-	analog_reg2=$(i2cget -f -y 2 0x20 0x10 2> /dev/null)
-	if [[ $analog_reg1 == "0x0f" || $analog_reg2 == "0x0f" ]]; then
-	    echo "Analog Input Detected"
-	    sleep 2
-	    break_flag=0
-	fi
-    done
-else
-    echo "This system does not have v4l2-ctl, assuming an input device has"
-    echo "been inserted if required."
-fi
-
-if [ "$FB" -gt 4 ]; then
-    echo "Frame-buffer must be from 0-4"
-    print_usage
-fi
-
-echo 0 > /sys/class/graphics/fb$FB/blank
-DEV_V4L=/dev/video$((FB+16))
-
-# Background the overlay
-if [ "$OVERLAY" ]; then
-    (gst-launch -e videotestsrc pattern=$OVERLAY ! mfw_v4lsink device=/dev/video$((FB+16+1))) &
-fi
-
-if [ "$PIPELINE" ]; then
-    echo "Executing gst-launch $PIPELINE"
-    gst-launch "$PIPELINE"
-elif [ "$VIDEOSRC" ]; then
-    if [ "$VIDEOSINK" ]; then
-    echo "Executing gst-launch $VIDEOSRC ! $VIDEOSINK"
-	gst-launch -e $VIDEOSRC ! $VIDEOSINK
-    else
-    echo "Executing gst-launch $VIDEOSRC ! mfw_v4lsink device=$DEV_V4L"
-	gst-launch -e $VIDEOSRC ! mfw_v4lsink device=$DEV_V4L
-    fi
-elif [ "$VIDEOSINK" ]; then
-    echo "Executing gst-launch videotestsrc pattern=$PATTERN ! $VIDEOSINK"
-    gst-launch -e videotestsrc pattern=$PATTERN ! $VIDEOSINK
-else
-    echo "Executing gst-launch videotestsrc pattern=$PATTERN ! mfw_v4lsink device=$DEV_V4L"
-    gst-launch -e videotestsrc pattern=$PATTERN ! mfw_v4lsink device=$DEV_V4L
-fi
-
-[ "$UNBLANK" ] || {
-    echo 1 > /sys/class/graphics/fb$FB/blank
+# sanity checks
+[ -c "/dev/fb$OUTFB" ] || {
+	echo "invalid framebuffer"
+	print_usage
+}
+[ $INDEV ] && {
+	[ -c "/dev/video$INDEV" ] || {
+		echo "invalid input device"
+		print_usage
+	}
 }
 
-exit 1
+# blank framebuffers
+for i in $BLANK_ME; do
+	[ -r $i/blank ] && {
+		echo "Unblanking $i"
+		echo 1 > $i/blank
+	}
+done
+
+hdmi_in() {
+	local dir="/sys/devices/platform/imx-i2c.2/i2c-2/2-0048"
+	local state="$(cat $dir/state)"
+
+	[ "$state" = "locked" ] && {
+		echo "$(cat $dir/vendor) $(cat $dir/device) locked: $(cat $dir/mode)"
+		return 1	
+	}
+}
+
+analog_in() {
+	local state="$(v4l2-ctl -d /dev/video$INDEV --get-standard | head -n1 | awk '{print $4}')"
+
+	[ "$state" = "0x0000b000" ] && {
+		echo "NTSC Analog Input Detected"
+		return 1
+	}
+}
+
+cleanup() {
+	echo "cleanup: killing $PID_BG $PID_BLANK..."
+	[ $PID_BG ] && kill $PID_BG
+	[ $PID_BLANK ] && kill $PID_BLANK
+	exit 0
+}
+
+# Trap sigint
+trap cleanup SIGINT SIGTERM
+
+# Wait for video input source to be detected
+# (Otherwise gstreamer can hang or error out)
+if [ "$INDEV" ]; then
+	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
+	echo "Waiting to detect input signal..."
+	input=
+	while [ 1 ]; do
+		if [ -r /dev/video1 ]; then
+			case $INDEV in
+				0) input=$(hdmi_in);;
+				1) input=$(analog_in);;
+			esac
+		else
+			input=$(analog_in)
+		fi
+		[ "$input" ] && break
+		sleep 1
+	done
+	sleep 2
+else
+	[ "$VIDEOSRC" ] || VIDEOSRC=videotestsrc
+fi
+
+# Background process to keep fb's unblanked
+(
+	while [ 1 ]; do
+		bgfb=$(($OUTFB+1))
+		echo 0 > /sys/class/graphics/fb$OUTFB/blank
+		[ "$OVERLAY" -a -r /sys/class/graphics/fb${bgfb} ] && {
+			echo 0 > /sys/class/graphics/fb${bgfb}/blank
+		}
+		sleep 1
+	done
+) &
+PID_BLANK=$!
+
+# Background the overlay
+[ $OVERLAY ] && {
+	echo "Launching pipeline for background display on /dev/video$((OUTFB+16+1))"
+	(gst-launch -e videotestsrc pattern=$OVERLAY ! mfw_v4lsink device=/dev/video$((OUTFB+16+1))) &
+	PID_BG=$!
+}
+
+# Create the Pipeline
+[ "$PIPELINE" ] || {
+	VIDEOSINK="$VIDEOSINK device=/dev/video$((OUTFB+16))"
+	if [ "$VIDEOSRC" = "videotestsrc" ]; then
+		VIDEOSRC="$VIDEOSRC pattern=$PATTERN"
+	else
+		VIDEOSRC="$VIDEOSRC device=/dev/video$INDEV"
+	fi
+	PIPELINE="$VIDEOSRC ! $VIDEOSINK"
+}
+
+echo "Executing gst-launch $PIPELINE"
+gst-launch $PIPELINE
+
+[ "$UNBLANK" ] || {
+	echo 1 > /sys/class/graphics/fb$OUTFB/blank
+}
+
+cleanup
