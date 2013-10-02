@@ -50,7 +50,7 @@ for i in 0 1; do
     echo "Setting up amixer settings for device $i"
     amixer -c $i -q sset "Capture Mux" LINE_IN 2>/dev/null
     amixer -c $i -q sset "Line In Function" on 2>/dev/null
-    amixer -c $i -q sset "Capture" 0 2>/dev/null
+    amixer -c $i -q sset "Capture" 8 2>/dev/null
     amixer -c $i -q sset "PCM" 100% 2>/dev/null
 done
 
