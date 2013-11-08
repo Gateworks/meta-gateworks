@@ -114,18 +114,26 @@ trap cleanup SIGINT SIGTERM
 # (Otherwise gstreamer can hang or error out)
 if [ "$INDEV" ]; then
 	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
-	echo "Waiting to detect input signal..."
+	src=cvbs
+	if [ -r /dev/video1 ]; then
+		case $INDEV in
+			0) src=HDMI;;
+			1) src=CVBS;;
+		esac
+	fi
+	echo "Waiting to detect $src input signal..."
+	#echo "uptime: $(awk '{print $1}' /proc/uptime)"
 	input=
 	while [ 1 ]; do
-		if [ -r /dev/video1 ]; then
-			case $INDEV in
-				0) input=$(hdmi_in);;
-				1) input=$(analog_in);;
-			esac
-		else
-			input=$(analog_in)
-		fi
-		[ "$input" ] && break
+		case $src in
+				HDMI) input=$(hdmi_in);;
+				CVBS) input=$(analog_in);;
+		esac
+		[ "$input" ] && {
+			#echo "uptime: $(awk '{print $1}' /proc/uptime)"
+			echo "$input"
+			break
+		}
 		sleep 1
 	done
 	sleep 2
