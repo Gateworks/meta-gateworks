@@ -4,13 +4,12 @@ DESCRIPTION = "Image capable of booting a device with support for the \
 gateworks-test functions (i.e. test_audio, test_video, ...)"
 
 # test tools
-IMAGE_INSTALL += "gateworks-test v4l-utils"
+IMAGE_INSTALL += "gateworks-test"
 
 require recipes-multimedia/gstreamer/gst-plugins-package.inc
 
-## Required for video/audio tests in gateworks-test package ##
 # GST Specific Packages
-IMAGE_INSTALL_append +="\
+IMAGE_INSTALL +="\
 	packagegroup-fsl-gstreamer                                    \
 	gst-ffmpeg gst-fsl-plugin-gplay	                              \
 	gst-meta-video gst-meta-audio gst-meta-base                   \
@@ -22,13 +21,8 @@ IMAGE_INSTALL_append +="\
 	gst-plugins-bad gst-plugins-bad-fbdevsink                     \
 	gst-plugins-ugly gst-plugins-ugly-mad gst-plugins-ugly-a52dec \
 	gst-plugins-ugly-mpegaudioparse gst-plugins-ugly-mpeg2dec     \
+	gpu-viv-bin-mx6q libfslparser                                 \
 	"
-
-# Extra
-IMAGE_INSTALL_append_ventana +="\
-	gpu-viv-bin-mx6q libfslparser stress \
-	"
-## End Extra Packages ##
 
 # Firmware
 IMAGE_INSTALL += "libfslvpuwrap"

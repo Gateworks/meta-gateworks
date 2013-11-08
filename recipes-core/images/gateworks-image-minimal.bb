@@ -4,30 +4,35 @@ DESCRIPTION = "A minimal Gateworks image"
 
 LICENSE = "GPLv3"
 
-# Include certain utilities
-IMAGE_INSTALL_append_ventana += "canutils"
-
-# file system tools
-IMAGE_INSTALL += "\
-        mtd-utils \
-        "
-
-# Testing tools for i2cget, lspci etc
-IMAGE_INSTALL_append += "\
-	i2c-tools pciutils usbutils fb-test fbset iperf \
-	"
-
 IMAGE_FEATURES += "package-management"
 
+# Wireless/networking
+IMAGE_INSTALL += "\
+	canutils \
+	iw \
+	wpa-supplicant \
+	hostap-daemon \
+	wireless-tools \
+	compat-wireless-all \
+	dropbear \
+	"
+
+# FLASH tools
+IMAGE_INSTALL += "\
+	mtd-utils \
+	kobs-ng \
+	"
+
+# Testing tools for i2cget, lspci etc
+IMAGE_INSTALL += "\
+	i2c-tools pciutils usbutils fb-test fbset iperf devmem2 watchdog \
+	wget evtest memtester screen nano bash nbench-byte stress \
+	"
+
 # Useful tools
-IMAGE_INSTALL_append += "\
-	wget evtest memtester dropbear kobs-ng          \
-	fsl-rc-local nbench-byte wireless-tools         \
-	compat-wireless-all opkg                        \
+IMAGE_INSTALL += "\
+	fsl-rc-local opkg \
 	"
 
 # Remove udev caching
 ROOTFS_POSTPROCESS_COMMAND += "rm -rf ${IMAGE_ROOTFS}/etc/default/udev ; "
-
-# EXTRA
-IMAGE_INSTALL_append += "screen nano bash"
