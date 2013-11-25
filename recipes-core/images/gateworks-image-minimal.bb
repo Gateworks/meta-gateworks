@@ -15,6 +15,8 @@ IMAGE_INSTALL += "\
 	wireless-tools \
 	compat-wireless-all \
 	dropbear \
+	dnsmasq \
+	bridge-utils \
 	"
 
 # FLASH tools
