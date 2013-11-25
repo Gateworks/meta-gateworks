@@ -86,8 +86,8 @@ hdmi_in() {
 	local state="$(cat $dir/state)"
 
 	[ "$state" = "locked" ] && {
-		echo "$(cat $dir/vendor) $(cat $dir/device) locked: $(cat $dir/mode)"
-		return 1	
+		echo "$(cat $dir/vendor) $(cat $dir/product) locked: $(cat $dir/vidmode)"
+		return 1
 	}
 }
 
@@ -113,13 +113,20 @@ trap cleanup SIGINT SIGTERM
 # Wait for video input source to be detected
 # (Otherwise gstreamer can hang or error out)
 if [ "$INDEV" ]; then
-	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
-	src=cvbs
 	if [ -r /dev/video1 ]; then
 		case $INDEV in
-			0) src=HDMI;;
-			1) src=CVBS;;
+			0)
+			[ "$VIDEOSRC" ] || VIDEOSRC=mfw_v4lsrc
+			src=HDMI
+			;;
+			1)
+			[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
+			src=CVBS
+			;;
 		esac
+	else
+		[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
+		src=CVBS
 	fi
 	echo "Waiting to detect $src input signal..."
 	#echo "uptime: $(awk '{print $1}' /proc/uptime)"
