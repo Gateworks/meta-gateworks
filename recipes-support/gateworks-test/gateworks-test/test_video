@@ -82,8 +82,14 @@ for i in $BLANK_ME; do
 done
 
 hdmi_in() {
-	local dir="/sys/devices/platform/imx-i2c.2/i2c-2/2-0048"
-	local state="$(cat $dir/state)"
+	local dir
+	local state
+
+	[ -d /sys/devices/platform/imx-i2c.2 ] && \
+	  dir=/sys/devices/platform/imx-i2c.2/i2c-2/2-0048/
+	[ -d /sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/ ] && \
+	  dir=/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0048
+	state="$(cat $dir/state)"
 
 	[ "$state" = "locked" ] && {
 		echo "$(cat $dir/vendor) $(cat $dir/product) locked: $(cat $dir/vidmode)"
