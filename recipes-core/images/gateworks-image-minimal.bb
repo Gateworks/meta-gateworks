@@ -36,5 +36,8 @@ IMAGE_INSTALL += "\
 	fsl-rc-local opkg \
 	"
 
+# devicetree files
+IMAGE_INSTALL += "kernel-devicetree"
+
 # Remove udev caching
 ROOTFS_POSTPROCESS_COMMAND += "rm -rf ${IMAGE_ROOTFS}/etc/default/udev ; "
