@@ -1,4 +1,5 @@
 require recipes-core/images/core-image-base.bb
+inherit ubi-config
 
 DESCRIPTION = "A minimal Gateworks image"
 
