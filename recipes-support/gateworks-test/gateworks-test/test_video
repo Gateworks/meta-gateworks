@@ -94,10 +94,16 @@ hdmi_in() {
 analog_in() {
 	local state="$(v4l2-ctl -d /dev/video$INDEV --get-standard | head -n1 | awk '{print $4}')"
 
-	[ "$state" = "0x0000b000" ] && {
+	case "$state" in
+	0x000000ff)
+		echo "PAL Analog Input Detected"
+		return 1
+		;;
+	0x0000b000)
 		echo "NTSC Analog Input Detected"
 		return 1
-	}
+		;;
+	esac
 }
 
 cleanup() {
@@ -113,20 +119,13 @@ trap cleanup SIGINT SIGTERM
 # Wait for video input source to be detected
 # (Otherwise gstreamer can hang or error out)
 if [ "$INDEV" ]; then
+	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
+	src=CVBS
 	if [ -r /dev/video1 ]; then
 		case $INDEV in
-			0)
-			[ "$VIDEOSRC" ] || VIDEOSRC=mfw_v4lsrc
-			src=HDMI
-			;;
-			1)
-			[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
-			src=CVBS
-			;;
+			0) src=HDMI;;
+			1) src=CVBS;;
 		esac
-	else
-		[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
-		src=CVBS
 	fi
 	echo "Waiting to detect $src input signal..."
 	#echo "uptime: $(awk '{print $1}' /proc/uptime)"
