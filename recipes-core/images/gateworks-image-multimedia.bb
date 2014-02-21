@@ -23,6 +23,3 @@ IMAGE_INSTALL +="\
 	gst-plugins-ugly-mpegaudioparse gst-plugins-ugly-mpeg2dec     \
 	gpu-viv-bin-mx6q libfslparser                                 \
 	"
-
-# Firmware
-IMAGE_INSTALL += "libfslvpuwrap"

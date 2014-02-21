@@ -9,10 +9,5 @@ IMAGE_INSTALL += "\
 	gateworks-test \
 	"
 
-# Firmware
-IMAGE_INSTALL += "\
-	libfslvpuwrap \
-	"
-
 # remove not needed ipkg informations
 #ROOTFS_POSTPROCESS_COMMAND += "remove_packaging_data_files ; "
