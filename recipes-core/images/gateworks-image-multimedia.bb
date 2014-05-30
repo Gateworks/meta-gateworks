@@ -1,12 +1,11 @@
+require recipes-multimedia/gstreamer/gst-plugins-package.inc
 require gateworks-image-minimal.bb
 
 DESCRIPTION = "Image capable of booting a device with support for the \
-gateworks-test functions (i.e. test_audio, test_video, ...)"
+	    gateworks-test functions (i.e. test_audio, test_video, ...)"
 
 # test tools
 IMAGE_INSTALL += "gateworks-test"
-
-require recipes-multimedia/gstreamer/gst-plugins-package.inc
 
 # GST Specific Packages
 IMAGE_INSTALL +="\
