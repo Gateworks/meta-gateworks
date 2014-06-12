@@ -11,14 +11,14 @@ RDEPENDS_${PN} = " \
 	gst-plugins-base-videotestsrc gst-plugins-base-audiotestsrc  \
 	gst-plugins-base-tcp                                         \
 	gst-plugins-good-id3demux                                    \
-	gst-plugins-bad                                              \
+	gst-plugins-bad-fbdevsink                                    \
 	gst-fsl-plugin-gplay gst-plugins-ugly                        \
 	fb-test fbset                                                \
 	v4l-utils \
   "
 DESTDIR = "/usr/bin"
 
-PR = "r2"
+PR = "r3"
 
 SRC_URI = " \
 	file://test_audio   \
