@@ -10,6 +10,7 @@ IMAGE_FEATURES += "package-management"
 # Wireless/networking
 IMAGE_INSTALL += "\
 	canutils \
+	iproute2 \
 	iw \
 	wpa-supplicant \
 	hostap-daemon \
