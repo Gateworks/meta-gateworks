@@ -9,9 +9,11 @@ DISTRO_FEATURES += "pulseaudio"
 WEB = "web-webkit"
 
 IMAGE_INSTALL += " \
-    xf86-video-fbdev \
+    u-boot-script-gateworks \
     midori \
     cpufrequtils \
+    xf86-video-fbdev \
+    owl-video \
     qt4-plugin-phonon-backend-gstreamer \
-    fsl-gui-extrafiles \
+    packagegroup-fsl-tools-gpu \
     "
