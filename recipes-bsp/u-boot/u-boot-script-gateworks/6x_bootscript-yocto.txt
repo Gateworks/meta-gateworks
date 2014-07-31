@@ -1,0 +1,58 @@
+# Don't touch if video param is set
+if test -z "$video" ; then
+    # locally used variables
+    setenv fb_num 0 ;
+    setenv tmpfbmem ;
+    setenv tmpgpumem ;
+
+    # Check for Freescale LVDS display
+    i2c dev 2 ;
+    if i2c probe 0x04 ; then
+	setenv video video=mxcfb${fb_num}:dev=ldb,LDB-XGA,if=RGB666,bpp=32
+	# fbmem for Freescale LVDS display: 1024*768*4*3~=10M
+	setenv tmpfbmem "fbmem=10M" ;
+	echo "--- Setting LVDS Display to mxcfb${fb_num} ---" ;
+	setexpr fb_num $fb_num + 1
+    fi
+
+    # Check for HDMI monitor
+    if hdmidet ; then
+	setenv video $video video=mxcfb${fb_num}:dev=hdmi,1920x1080M@60,if=RGB24,bpp=32
+	# fbmem for 1080 display: 1920*1080*4*3~=24M
+	if test -z "$tmpfbmem" ; then
+	    setenv tmpfbmem 'fbmem=24M' ;
+	else
+	    setenv tmpfbmem ${tmpfbmem},24M
+	fi
+
+	echo "--- Setting HDMI Display to mxcfb${fb_num} ---" ;
+	setexpr fb_num $fb_num + 1
+    fi
+
+    # Always add in CVBS display
+    setenv video $video video=mxcfb${fb_num}:dev=adv739x,BT656-NTSC,if=BT656,fbpix=RGB565,bpp=32
+    if test -z "$tmpfbmem" ; then
+	setenv tmpfbmem 'fbmem=10M' ;
+    else
+	setenv tmpfbmem ${tmpfbmem},10M
+    fi
+    echo "--- Setting CVBS Display to mxcfb${fb_num} ---" ;
+    setexpr fb_num $fb_num + 1
+
+    # Give each FB about 32M of gpumem; This value highly depends on what each disp is doing.
+    # see https://community.freescale.com/docs/DOC-93591 for more details
+    setexpr tmpgpumem $fb_num * 32
+    setenv video $video gpumem=${tmpgpumem}M
+
+    # Mark the rest of the displays to 'off'
+    while test "$fb_num" -le "3" ; do
+	setenv video $video video=mxcfb${fb_num}:off
+	setexpr fb_num $fb_num + 1
+    done
+
+    setenv video $video $tmpfbmem
+
+    echo "Video set to: ${video}" ;
+else
+    echo "video parameter already set, not checking for displays..."
+fi
