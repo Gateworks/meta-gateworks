@@ -14,10 +14,13 @@ IMAGE_INSTALL += "\
 	wpa-supplicant \
 	hostap-daemon \
 	wireless-tools \
+	crda \
+	linux-firmware-gateworks \
 	compat-wireless-all \
 	dropbear \
 	dnsmasq \
 	bridge-utils \
+	cpufrequtils \
 	"
 
 # FLASH tools
