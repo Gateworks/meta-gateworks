@@ -12,7 +12,7 @@ SRC_URI = "git://github.com/kvalo/ath10k-firmware"
 SRCREV = "38eeda3ae6f90fde5546bdd48ee4ff3090f238c0"
 LOCALVERSION = "-g38eeda3a"
 
-DEFAULT_FW = "999.999.0.636"
+DEFAULT_FW = "10.1.467.2-1"
 
 S = "${WORKDIR}/git"
 
