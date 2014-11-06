@@ -3,9 +3,11 @@ include compat-wireless.inc
 SRC_URI = " \
 	https://www.kernel.org/pub/linux/kernel/projects/backports/2014/08/08/backports-${PV}.tar.xz \
 	file://0001-disable_kconf.patch \
-        file://0010-ath10k_fix_monitor_start_stop_sequences.patch \
-        file://0011-ath10k_stop_monitor_vdev_for_sta_assoc.patch \
-	file://defconfig"
+	file://0010-ath10k_fix_monitor_start_stop_sequences.patch \
+	file://0011-ath10k_stop_monitor_vdev_for_sta_assoc.patch \
+	file://add_db_txt.patch \
+	file://defconfig \
+"
 
 COMPAT_WIRELESS_VERSION = "${PV}"
 
