@@ -1,0 +1,100 @@
+When the tda1997x_decoder utilizing yuv422 mode is used, configure the
+source format as YUV422 instead of YUV420. Until then we will be backwards
+compatible with the current tda1997x bt656 mode which outputs YUV420.
+
+This is necessary for 1080p60fps capture with the tda1997x HDMI receiver.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+--- a/src/misc/v4l_source/src/mfw_gst_v4lsrc.c
++++ b/src/misc/v4l_source/src/mfw_gst_v4lsrc.c
+@@ -464,6 +464,7 @@ mfw_gst_v4lsrc_capture_setup (MFWGstV4LS
+   struct v4l2_format fmt = {0};
+   struct v4l2_control ctrl = {0};
+   struct v4l2_streamparm parm = {0};
++  struct v4l2_dbg_chip_ident chip = {0};
+   struct v4l2_frmsizeenum fszenum = {0};
+   gint input;
+   gint fd_v4l = 0;
+@@ -475,6 +476,19 @@ mfw_gst_v4lsrc_capture_setup (MFWGstV4LS
+     return 0;
+   }
+ 
++  if (ioctl (fd_v4l, VIDIOC_DBG_G_CHIP_IDENT, &chip)) {
++    GST_ERROR ("VIDIOC_DBG_G_CHIP_IDENT failed.");
++  } else
++    GST_INFO ("sensor chip is %s", chip.match.name);
++  if (strcmp("tda1997x_decoder_yuv422", chip.match.name) == 0)
++  	v4l_src->forceyuv422 = 1;
++
++  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++  if (ioctl (fd_v4l, VIDIOC_G_FMT, &fmt)) {
++    GST_ERROR ("VIDIOC_G_FMT failed.");
++  } else
++    GST_INFO ("format %s", (char*)&fmt.fmt.pix.pixelformat);
++
+   if (v4l_src->crop_pixel) {
+     in_width = v4l_src->capture_width - (2 * v4l_src->crop_pixel);
+     in_height = v4l_src->capture_height - (2 * v4l_src->crop_pixel);
+@@ -487,7 +501,7 @@ mfw_gst_v4lsrc_capture_setup (MFWGstV4LS
+   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_NV12;
+ #else
+   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+-  if (IS_PXP (v4l_src->chipcode)) {
++  if (IS_PXP (v4l_src->chipcode) || v4l_src->forceyuv422) {
+       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
+   }
+ #endif
+@@ -503,7 +517,7 @@ mfw_gst_v4lsrc_capture_setup (MFWGstV4LS
+   v4l_src->capture_width = fszenum.discrete.width;
+   v4l_src->capture_height = fszenum.discrete.height;
+ 
+-  GST_INFO ("capture mode %d: %dx%d", v4l_src->capture_mode, v4l_src->capture_width, v4l_src->capture_height);
++  GST_INFO ("capture mode %d: %dx%d %s", v4l_src->capture_mode, v4l_src->capture_width, v4l_src->capture_height, (char*)&fmt.fmt.pix.pixelformat);
+ 
+   if (v4l_src->crop_pixel) {
+     off.u_offset = (2 * v4l_src->crop_pixel + in_width)
+@@ -1137,7 +1151,7 @@ mfw_gst_v4lsrc_start (GstBaseSrc * src)
+     GST_DEBUG ("Width = %d", fmt.fmt.pix.width);
+     GST_DEBUG ("Height = %d", fmt.fmt.pix.height);
+     GST_DEBUG ("Image size = %d", fmt.fmt.pix.sizeimage);
+-    GST_DEBUG ("pixelformat = %d", fmt.fmt.pix.pixelformat);
++    GST_DEBUG ("pixelformat = %4s", (char *)&fmt.fmt.pix.pixelformat);
+   }
+ 
+ 
+@@ -1440,7 +1454,7 @@ mfw_gst_v4lsrc_get_caps (GstBaseSrc * sr
+   gint i;
+ #ifndef MX51
+   guint32 format = GST_MAKE_FOURCC ('I', '4', '2', '0');
+-  if (IS_PXP (v4l_src->chipcode)) {
++  if (IS_PXP (v4l_src->chipcode) || v4l_src->forceyuv422) {
+       format = GST_MAKE_FOURCC ('U', 'Y', 'V', 'Y');
+   }
+ #else
+@@ -1490,7 +1504,7 @@ mfw_gst_v4lsrc_fixate (GstPad * pad, Gst
+   MFWGstV4LSrc *v4l_src = MFW_GST_V4LSRC (gst_pad_get_parent (pad));
+ #ifndef MX51
+   guint32 fourcc = GST_MAKE_FOURCC ('I', '4', '2', '0');
+-  if (IS_PXP (v4l_src->chipcode)) {
++  if (IS_PXP (v4l_src->chipcode) || v4l_src->forceyuv422) {
+       fourcc = GST_MAKE_FOURCC ('U', 'Y', 'V', 'Y');
+   }
+ #else
+@@ -1559,6 +1573,7 @@ mfw_gst_v4lsrc_init (MFWGstV4LSrc * v4l_
+   v4l_src->bg = FALSE;
+   v4l_src->g_display_lcd = 0;
+   v4l_src->queue_size = DEFAULT_QUEUE_SIZE;
++  v4l_src->forceyuv422 = 0;
+   v4l_src->start = FALSE;
+   v4l_src->stop = FALSE;
+ #ifdef MX27
+--- a/src/misc/v4l_source/src/mfw_gst_v4lsrc.h
++++ b/src/misc/v4l_source/src/mfw_gst_v4lsrc.h
+@@ -115,6 +115,7 @@ G_BEGIN_DECLS
+   gboolean start;
+   gboolean stop;
+   CHIP_CODE chipcode;
++  gboolean forceyuv422;
+ } MFWGstV4LSrc;
+ 
+ typedef struct MFW_GST_V4LSRC_INFO_CLASS_S
