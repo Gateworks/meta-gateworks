@@ -12,7 +12,7 @@ IMAGE_INSTALL += "\
 	iproute2 \
 	iw \
 	wpa-supplicant \
-	hostap-daemon \
+	hostapd \
 	wireless-tools \
 	linux-firmware-gateworks \
 	compat-wireless-all \
