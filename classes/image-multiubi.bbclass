@@ -14,7 +14,7 @@ multiubi_mkfs() {
     echo image=${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}${vname:+_${vname}}.rootfs.ubifs >> ubinize${vname:+_${vname}}.cfg
     echo vol_id=0 >> ubinize${vname:+_${vname}}.cfg
     echo vol_type=dynamic >> ubinize${vname:+_${vname}}.cfg
-    echo vol_name=${vname:+_${vname}} >> ubinize${vname:+_${vname}}.cfg
+    echo vol_name=${UBI_VOLNAME:-rootfs} >> ubinize${vname:+_${vname}}.cfg
     echo vol_flags=autoresize >> ubinize${vname:+_${vname}}.cfg
     mkfs.ubifs -r ${IMAGE_ROOTFS} -o ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}${vname:+_${vname}}.rootfs.ubifs ${mkubifs_args}
     ubinize -o ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}${vname:+_${vname}}.rootfs.ubi ${ubinize_args} ubinize${vname:+_${vname}}.cfg
