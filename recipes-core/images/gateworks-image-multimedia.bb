@@ -1,4 +1,3 @@
-require recipes-multimedia/gstreamer/gst-plugins-package.inc
 require gateworks-image-minimal.bb
 
 DESCRIPTION = "Image capable of booting a device with support for the \
@@ -9,7 +8,6 @@ IMAGE_INSTALL += "gateworks-test"
 
 # graphics and gstreamer plugins
 IMAGE_INSTALL += "\
-    packagegroup-fsl-tools-gpu \
     packagegroup-fsl-gstreamer \
     gst-plugins-base-meta \
     gst-plugins-good-meta \
