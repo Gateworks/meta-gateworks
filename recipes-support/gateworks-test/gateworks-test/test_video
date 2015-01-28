@@ -127,12 +127,14 @@ trap cleanup SIGINT SIGTERM
 if [ "$INDEV" ]; then
 	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
 	src=CVBS
-	if [ -r /dev/video1 ]; then
-		case $INDEV in
-			0) src=HDMI;;
-			1) src=CVBS;;
-		esac
-	fi
+	[ -e /sys/class/video4linux/video"$INDEV" ] && {
+	    src=$(cat /sys/class/video4linux/video"$INDEV"/fsl_slave_property)
+	    case "$src" in
+		tda1997x*) src=HDMI;;
+		adv*     ) src=CVBS;;
+		*        ) echo "Defaulting to CVBS Video in..."
+	    esac
+	}
 	echo "Waiting to detect $src input signal..."
 	#echo "uptime: $(awk '{print $1}' /proc/uptime)"
 	input=
