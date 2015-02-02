@@ -4,14 +4,13 @@
 require recipes-kernel/linux/linux-imx.inc
 require recipes-kernel/linux/linux-dtb.inc
 
-PR = "1"
+PR = "10"
 
 DEPENDS += "lzop-native bc-native"
 
 COMPATIBLE_MACHINE = "(ventana)"
 
 # override URI of source and PR for Gateworks linux-imx kernel
-UBOOT_ENTRYPOINT := "10008000"
-SRCREV = "4f75f45528c1874a338e9f60054dba7d2f93adc2"
-LOCALVERSION = "-1.1.0_ga+yocto"
-SRC_URI = "git://github.com/Gateworks/linux-imx6.git;protocol=git;branch=gateworks_3.10.53_1.1.0_ga file://defconfig"
+SRCREV = "e86e8d6c811d4660655998b8fc5a2b7115595424"
+LOCALVERSION = "-1.0.0_ga+yocto"
+SRC_URI = "git://github.com/Gateworks/linux-imx6.git;protocol=git;branch=gateworks_3.10.17_1.0.0_ga file://defconfig"
