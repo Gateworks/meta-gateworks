@@ -1,0 +1,33 @@
+commit 5de6dfc82f715b9fe9cf5c0cccce4384a82279ef
+Author: Vasanthakumar Thiagarajan <vthiagar@qti.qualcomm.com>
+Date:   Fri Jan 9 22:49:46 2015 +0530
+
+    ath10k: Fix potential Rx ring corruption
+    
+    When replenishing Rx buffers driver updates the address of the
+    buffer and the index of rx buffer in rx ring to the firmware.
+    Change in order by CPU can cause rx ring corruption. Add memory
+    barrier before updating rx buffer index to guarantee the order.
+    
+    This could fix some instances of rx ring corruption due to done
+    bit in rx attention flag not set.
+    
+    Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@qti.qualcomm.com>
+    Signed-off-by: Kalle Valo <kvalo@qca.qualcomm.com>
+
+diff --git a/drivers/net/wireless/ath/ath10k/htt_rx.c b/drivers/net/wireless/ath/ath10k/htt_rx.c
+index 9c782a4..baa1c44 100644
+--- a/drivers/net/wireless/ath/ath10k/htt_rx.c
++++ b/drivers/net/wireless/ath/ath10k/htt_rx.c
+@@ -97,6 +97,11 @@ static int __ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
+ 	}
+ 
+ fail:
++	/*
++	 * Make sure the rx buffer is updated before available buffer
++	 * index to avoid any potential rx ring corruption.
++	 */
++	mb();
+ 	*htt->rx_ring.alloc_idx.vaddr = __cpu_to_le32(idx);
+ 	return ret;
+ }

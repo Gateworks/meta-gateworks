@@ -6,6 +6,7 @@ SRC_URI = " \
 	file://0002-define_reinit.patch \
 	file://add_db_txt.patch \
 	file://defconfig \
+	file://ath10k-fix_potential_Rx_ring_corruption.patch \
 "
 
 COMPAT_WIRELESS_VERSION = "${PV}"
