@@ -1,0 +1,13 @@
+diff --git a/Makefile b/Makefile
+index c21b813..fd2ec5b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -16,7 +16,7 @@ KLIB := /lib/modules/$(shell uname -r)/
+ KMODPATH_ARG :=
+ endif
+ KLIB_BUILD ?= $(KLIB)/build/
+-KERNEL_CONFIG := $(KLIB_BUILD)/.config
++KERNEL_CONFIG := $(KLIB_CONFIG)/.config
+ KERNEL_MAKEFILE := $(KLIB_BUILD)/Makefile
+ CONFIG_MD5 := $(shell md5sum $(KERNEL_CONFIG) 2>/dev/null | sed 's/\s.*//')
+ 

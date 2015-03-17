@@ -10,14 +10,20 @@ INC_PR = "r1"
 # config.mk:25: *** "ERROR: your kernel has CONFIG_CFG80211=y, you should have it CONFIG_CFG80211=m if you want to use this thing.".  Stop.
 EXCLUDE_FROM_WORLD = "1"
 
+SRC_URI = "\
+	file://0001-disable_kconf.patch \
+	file://0002-define_reinit.patch \
+	file://0003-add-KLIB_CONFIG.patch \
+"
+
 COMPAT_WIRELESS_VERSION = "${PV}-1"
 SHRT_VER = "${@d.getVar('PV',1).split('.')[0]}.${@d.getVar('PV',1).split('.')[1]}"
 
-S = "${WORKDIR}/backports-${COMPAT_WIRELESS_VERSION}"
+S = "${WORKDIR}/compat-wireless-${COMPAT_WIRELESS_VERSION}"
 
 inherit module
 
-EXTRA_OEMAKE = "KLIB_BUILD=${STAGING_KERNEL_DIR} KLIB=${D}"
+EXTRA_OEMAKE = "KLIB_BUILD=${STAGING_KERNEL_DIR} KLIB_CONFIG=${STAGING_KERNEL_BUILDDIR} KLIB=${D}"
 
 do_configure_prepend() {
     cp ${WORKDIR}/defconfig ${S}/.config
