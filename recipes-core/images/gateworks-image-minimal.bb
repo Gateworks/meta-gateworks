@@ -30,6 +30,7 @@ IMAGE_INSTALL += "\
 # FLASH tools
 IMAGE_INSTALL += "\
 	mtd-utils \
+	mtd-utils-ubifs \
 	"
 
 # Testing tools for i2cget, lspci etc
