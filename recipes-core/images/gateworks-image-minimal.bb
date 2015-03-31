@@ -25,6 +25,7 @@ IMAGE_INSTALL += "\
 # FLASH tools
 IMAGE_INSTALL += "\
 	mtd-utils \
+	mtd-utils-ubifs \
 	imx-kobs \
 	"
 
