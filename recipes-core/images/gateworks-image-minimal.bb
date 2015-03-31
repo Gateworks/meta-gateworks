@@ -6,6 +6,11 @@ LICENSE = "GPLv3"
 
 IMAGE_FEATURES += "package-management"
 
+# Gateworks Specific
+IMAGE_INSTALL += "\
+	u-boot-script-gateworks \
+"
+
 # Wireless/networking
 IMAGE_INSTALL += "\
 	canutils \

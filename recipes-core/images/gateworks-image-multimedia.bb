@@ -18,6 +18,7 @@ IMAGE_INSTALL += "\
     packagegroup-fslc-gstreamer1.0-full \
     gstreamer1.0-meta-base \
     gst1.0-fsl-plugin \
+    gstreamer1.0-plugins-imx \
     gstreamer1.0-plugins-base-meta \
     gstreamer1.0-plugins-good-meta \
     gstreamer1.0-plugins-bad-meta \
