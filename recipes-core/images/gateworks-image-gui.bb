@@ -6,7 +6,6 @@ DESCRIPTION = "Image that has a simple desktop user interface which includes a \
 include recipes-sato/images/core-image-sato.bb
 
 IMAGE_INSTALL += " \
-    u-boot-script-gateworks \
     midori \
     owl-video \
     "
