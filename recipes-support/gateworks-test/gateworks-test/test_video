@@ -125,16 +125,20 @@ trap cleanup SIGINT SIGTERM
 # Wait for video input source to be detected
 # (Otherwise gstreamer can hang or error out)
 if [ "$INDEV" ]; then
-	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
 	src=CVBS
 	[ -e /sys/class/video4linux/video"$INDEV" ] && {
 	    src=$(cat /sys/class/video4linux/video"$INDEV"/fsl_slave_property)
 	    case "$src" in
-		tda1997x*) src=HDMI;;
+		tda1997x*)
+		    src=HDMI
+		    [ "$VIDEOSRC" ] || VIDEOSRC=mfw_v4lsrc
+		    ;;
 		adv*     ) src=CVBS;;
 		*        ) echo "Defaulting to CVBS Video in..."
 	    esac
 	}
+	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
+
 	echo "Waiting to detect $src input signal..."
 	#echo "uptime: $(awk '{print $1}' /proc/uptime)"
 	input=
