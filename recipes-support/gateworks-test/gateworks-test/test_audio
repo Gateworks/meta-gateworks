@@ -12,7 +12,7 @@ print_usage() {
     echo " -h, --help      This help Message"
     echo " -i <device>     Input sound device. Defaults to hw:0,0"
     echo " -o <device>     Output sound device. Defaults to hw:0,0"
-    echo " -p <\"pipeline\"> Execute gst-launch <\"pipeline\">"
+    echo " -p <\"pipeline\"> Execute gst-launch-1.0 <\"pipeline\">"
     echo " -s <\"source\">   Set the audio source, defaults to alsasrc"
     echo " -S <\"sink\">     Set the audio sink, defaults to alsasink"
     exit 1
@@ -55,22 +55,22 @@ for i in 0 1; do
 done
 
 # Use gstreamer to reset any hardware before actually running the pipeline
-(gst-launch alsasrc ! alsasink) & gst_pid=$!
+(gst-launch-1.0 alsasrc ! alsasink) & gst_pid=$!
 kill -9 $gst_pid
 
 # Audio pipeline
 if [ "$AUDIOSRC" ]; then
     if [ "$AUDIOSINK" ]; then
-	gst-launch $AUDIOSRC ! $AUDIOSINK
+	gst-launch-1.0 $AUDIOSRC ! $AUDIOSINK
     else
-	gst-launch -q $AUDIOSRC ! alsasink device=$OUTPUT_DEV
+	gst-launch-1.0 -q $AUDIOSRC ! alsasink device=$OUTPUT_DEV
     fi
 elif [ "$AUDIOSINK" ]; then
-    gst-launch -q alsasrc device=$INPUT_DEV ! $AUDIOSINK
+    gst-launch-1.0 -q alsasrc device=$INPUT_DEV ! $AUDIOSINK
 elif [ "$PIPELINE" ]; then
-    gst-launch $PIPELINE
+    gst-launch-1.0 $PIPELINE
 else
-    gst-launch -q alsasrc device=$INPUT_DEV ! alsasink device=$OUTPUT_DEV
+    gst-launch-1.0 -q alsasrc device=$INPUT_DEV ! alsasink device=$OUTPUT_DEV
 fi
 
 mv /etc/asound.conf.orig /etc/asound.conf

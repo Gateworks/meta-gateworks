@@ -4,18 +4,20 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-3.0;md5=c79ff39f19dfec6d293
 
 SECTION = "console/utils"
 RDEPENDS_${PN} = " \
-	packagegroup-fsl-gstreamer \
-	gst-plugins-base-meta \
-	gst-plugins-good-meta \
-	gst-plugins-bad-meta \
-	gst-plugins-ugly-meta \
+	packagegroup-fslc-gstreamer1.0-full \
+	gstreamer1.0-meta-base \
+	gstreamer1.0-plugins-imx \
+	gstreamer1.0-plugins-base-meta \
+	gstreamer1.0-plugins-good-meta \
+	gstreamer1.0-plugins-bad-meta \
+	gstreamer1.0-plugins-ugly-meta \
 	alsa-utils alsa-lib alsa-state \
 	fb-test fbset \
 	v4l-utils \
   "
 DESTDIR = "/usr/bin"
 
-PR = "r3"
+PR = "r4"
 
 SRC_URI = " \
 	file://test_audio   \

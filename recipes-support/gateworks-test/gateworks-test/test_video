@@ -16,9 +16,9 @@ print_usage() {
 	echo " -p <pattern>      Which pattern from 0-20, defaults to 0"
 	echo " -b                Blank all other screens before video output"
 	echo " -B <pattern>      Background Overlay 'pattern' to frame-buffer+1"
-	echo " -c <pipeline>     Executes gst-launch <pipeline>"
+	echo " -c <pipeline>     Executes gst-launch-1.0 <pipeline>"
 	echo " -I <src>          Set gstreamer src plugin, defaults to videotestsrc"
-	echo " -O <sink>         Set gstreamer sink plugin, defaults to mfw_v4lsink"
+	echo " -O <sink>         Set gstreamer sink plugin, defaults to imxv4l2sink
 	echo " -u                Leave frame-buffer unblanked"
 	echo ""
 	echo "Example Usage:"
@@ -34,7 +34,7 @@ OUTFB=0
 INDEV=
 PATTERN=0
 VIDEOSRC=
-VIDEOSINK=mfw_v4lsink
+VIDEOSINK=imxv4l2sink
 BLANK_ME=
 PIPELINE=
 UNBLANK=
@@ -131,13 +131,13 @@ if [ "$INDEV" ]; then
 	    case "$src" in
 		tda1997x*)
 		    src=HDMI
-		    [ "$VIDEOSRC" ] || VIDEOSRC=mfw_v4lsrc
+		    [ "$VIDEOSRC" ] || VIDEOSRC=imxv4l2src
 		    ;;
 		adv*     ) src=CVBS;;
 		*        ) echo "Defaulting to CVBS Video in..."
 	    esac
 	}
-	[ "$VIDEOSRC" ] || VIDEOSRC=tvsrc
+	[ "$VIDEOSRC" ] || VIDEOSRC=imxv4l2src
 
 	echo "Waiting to detect $src input signal..."
 	#echo "uptime: $(awk '{print $1}' /proc/uptime)"
@@ -175,7 +175,7 @@ PID_BLANK=$!
 # Background the overlay
 [ $OVERLAY ] && {
 	echo "Launching pipeline for background display on /dev/video$((OUTFB+16+1))"
-	(gst-launch -e videotestsrc pattern=$OVERLAY ! mfw_v4lsink device=/dev/video$((OUTFB+16+1))) &
+	(gst-launch-1.0 -e videotestsrc pattern=$OVERLAY ! ${VIDEOSINK} device=/dev/video$((OUTFB+16+1))) &
 	PID_BG=$!
 }
 
@@ -191,7 +191,7 @@ PID_BLANK=$!
 }
 
 echo "Executing gst-launch $PIPELINE"
-gst-launch $PIPELINE
+gst-launch-1.0 $PIPELINE
 
 [ "$UNBLANK" ] || {
 	echo 1 > /sys/class/graphics/fb$OUTFB/blank
