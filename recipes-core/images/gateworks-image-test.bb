@@ -1,13 +1,27 @@
-require gateworks-image-minimal.bb
+require recipes-core/images/core-image-base.bb
 
 DESCRIPTION = "Gateworks Test Image"
 
-IMAGE_ROOTFS_SIZE = "8192"
+LICENSE = "GPLv3"
 
-# test tools
+IMAGE_FEATURES += "package-management"
+
+# Gateworks test tools
+IMAGE_INSTALL += "gateworks-test gst-gateworks-apps"
+
+# graphics and gstreamer plugins
 IMAGE_INSTALL += "\
-	gateworks-test \
-	"
+    packagegroup-fslc-gstreamer1.0-full \
+    gstreamer1.0-meta-base \
+    gstreamer1.0-plugins-imx \
+    gstreamer1.0-rtsp-server \
+    gstreamer1.0-plugins-base-meta \
+    gstreamer1.0-plugins-good-meta \
+    gstreamer1.0-plugins-bad-meta \
+    gstreamer1.0-plugins-ugly-meta \
+"
 
-# remove not needed ipkg informations
-#ROOTFS_POSTPROCESS_COMMAND += "remove_packaging_data_files ; "
+# Audio packages
+IMAGE_INSTALL += "\
+    alsa-utils alsa-lib alsa-state \
+"

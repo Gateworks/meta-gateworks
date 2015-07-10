@@ -1,21 +1,20 @@
-require gateworks-image-multimedia.bb
+require gateworks-image-test.bb
 
-DESCRIPTION = "Image that has a simple desktop user interface which includes a \
-browser and several media players"
+DESCRIPTION = "A simple X11 based image that includes a web browser"
 
-IMAGE_FEATURES += "splash package-management x11-base x11-sato hwcodecs"
+IMAGE_FEATURES += "x11-base x11-sato hwcodecs"
 
-# SATO image specifics
-IMAGE_INSTALL += " \
+# Install browser and x11
+IMAGE_INSTALL += "\
     packagegroup-core-x11-sato \
     midori \
 "
 
-# FSL Specifics
-IMAGE_INSTALL += " \
+# FSL Specific Packages
+IMAGE_INSTALL += "\
     packagegroup-fsl-tools-gpu \
     vivante-gpu-sdk \
-    "
+"
 
-# Only build a UBI with 'large' settings
+# Only build large ubi image
 MULTIUBI_BUILD = "large"
