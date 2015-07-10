@@ -1,0 +1,96 @@
+diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
+index aa4071d..38d2426 100644
+--- a/sys/v4l2/gstv4l2object.c
++++ b/sys/v4l2/gstv4l2object.c
+@@ -142,6 +142,8 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
+ 
+ #define GST_V4L2_FORMAT_COUNT (G_N_ELEMENTS (gst_v4l2_formats))
+ 
++gboolean min_buffers_preset = FALSE;
++
+ static GSList *gst_v4l2_object_get_format_list (GstV4l2Object * v4l2object);
+ 
+ 
+@@ -267,6 +269,13 @@ gst_v4l2_object_install_properties_helper (GObjectClass * gobject_class,
+           GST_TYPE_V4L2_DEVICE_FLAGS, DEFAULT_PROP_FLAGS,
+           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+ 
++  /* Min Buffers when capturing */
++  g_object_class_install_property (gobject_class, PROP_MIN_BUFFERS,
++      g_param_spec_int ("min-buffers", "Minimum Buffers",
++          "Minimum buffers to allocate for device",
++          GST_V4L2_MIN_BUFFERS, 8, GST_V4L2_MIN_BUFFERS,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
+   /**
+    * GstV4l2Src:brightness:
+    *
+@@ -369,7 +378,6 @@ gst_v4l2_object_install_properties_helper (GObjectClass * gobject_class,
+       g_param_spec_boolean ("force-aspect-ratio", "Force aspect ratio",
+           "When enabled, the pixel aspect ratio will be enforced", TRUE,
+           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+-
+ }
+ 
+ void
+@@ -610,6 +618,10 @@ gst_v4l2_object_set_property_helper (GstV4l2Object * v4l2object,
+     case PROP_FORCE_ASPECT_RATIO:
+       v4l2object->keep_aspect = g_value_get_boolean (value);
+       break;
++    case PROP_MIN_BUFFERS:
++      min_buffers_preset = TRUE;
++      v4l2object->min_buffers_for_capture = g_value_get_int (value);
++      break;
+     default:
+       return FALSE;
+       break;
+@@ -710,6 +722,9 @@ gst_v4l2_object_get_property_helper (GstV4l2Object * v4l2object,
+     case PROP_FORCE_ASPECT_RATIO:
+       g_value_set_boolean (value, v4l2object->keep_aspect);
+       break;
++    case PROP_MIN_BUFFERS:
++      g_value_set_int (value, v4l2object->min_buffers_for_capture);
++      break;
+     default:
+       return FALSE;
+       break;
+@@ -3275,14 +3290,17 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
+   if (size == 0)
+     goto no_size;
+ 
+-  /* Certain driver may expose a minimum through controls */
+-  ctl.id = V4L2_CID_MIN_BUFFERS_FOR_CAPTURE;
+-  if (v4l2_ioctl (obj->video_fd, VIDIOC_G_CTRL, &ctl) >= 0) {
+-    GST_DEBUG_OBJECT (obj->element, "driver require a minimum of %d buffers",
+-        ctl.value);
+-    obj->min_buffers_for_capture = ctl.value;
+-  } else {
+-    obj->min_buffers_for_capture = 0;
++  /* Grab from input */
++  if (min_buffers_preset == FALSE) {
++          /* Certain driver may expose a minimum through controls */
++          ctl.id = V4L2_CID_MIN_BUFFERS_FOR_CAPTURE;
++          if (v4l2_ioctl (obj->video_fd, VIDIOC_G_CTRL, &ctl) >= 0) {
++                  GST_DEBUG_OBJECT (obj->element, "driver require a minimum of %d buffers",
++                                    ctl.value);
++                  obj->min_buffers_for_capture = ctl.value;
++          } else {
++                  obj->min_buffers_for_capture = 0;
++          }
+   }
+ 
+   /* If pushing from our own pool, configure it with queried minimum,
+diff --git a/sys/v4l2/gstv4l2object.h b/sys/v4l2/gstv4l2object.h
+index c13cd64..c5482ec 100644
+--- a/sys/v4l2/gstv4l2object.h
++++ b/sys/v4l2/gstv4l2object.h
+@@ -192,7 +192,8 @@ GType gst_v4l2_object_get_type (void);
+     PROP_CAPTURE_IO_MODE,     \
+     PROP_EXTRA_CONTROLS,      \
+     PROP_PIXEL_ASPECT_RATIO,  \
+-    PROP_FORCE_ASPECT_RATIO
++    PROP_FORCE_ASPECT_RATIO,  \
++    PROP_MIN_BUFFERS
+ 
+ /* create/destroy */
+ GstV4l2Object*  gst_v4l2_object_new       (GstElement * element,
