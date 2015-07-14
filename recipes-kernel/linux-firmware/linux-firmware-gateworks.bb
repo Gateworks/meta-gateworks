@@ -31,6 +31,10 @@ do_compile() {
     :
 }
 
+do_configure() {
+    :
+}
+
 # Only install drivers we want as listed in INSTALL_DRIVERS
 do_install() {
     install -d ${D}/lib/firmware/
