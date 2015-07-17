@@ -2,7 +2,7 @@ DESCRIPTION = "Gateworks GStreamer Sample Applications"
 LICENSE = "GPLv3"
 LIC_FILES_CHKSUM = "file://COPYING;md5=d32239bcb673463ab874e80d47fae504"
 
-DEPENDS = " \
+DEPENDS += " \
     gstreamer1.0 \
     gstreamer1.0-rtsp-server \
     gstreamer1.0-plugins-imx \
