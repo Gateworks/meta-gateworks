@@ -1,20 +1,18 @@
 DESCRIPTION = "Ath10k 802.11ac driver firmware"
 HOMEPAGE = "http://wireless.kernel.org/en/users/Drivers/ath10k/firmware"
 
-PE = "0"
-
-LICENSE = "QCA"
+LICENSE = "CLOSED"
 LIC_FILES_CHKSUM = "file://LICENSE.qca_firmware;md5=0ab1b291e8bb10e4858a699bae761d1b"
 
-inherit allarch
-
-SRC_URI = "git://github.com/kvalo/ath10k-firmware"
 SRCREV = "38eeda3ae6f90fde5546bdd48ee4ff3090f238c0"
 LOCALVERSION = "-g38eeda3a"
+SRC_URI = "git://github.com/kvalo/ath10k-firmware;protocol=http;branch=master"
 
 DEFAULT_FW = "10.1.467.2-1"
 
 S = "${WORKDIR}/git"
+
+inherit allarch
 
 do_install() {
     install -d ${D}${base_libdir}/firmware/ath10k/QCA988X/hw2.0/
