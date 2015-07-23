@@ -9,6 +9,7 @@ IMAGE_FEATURES += "package-management"
 # Gateworks Specifics
 IMAGE_INSTALL += "\
 	u-boot-script-gateworks \
+	gwsoc glibc-gconv-utf-16 \
 "
 
 # Wireless/networking
