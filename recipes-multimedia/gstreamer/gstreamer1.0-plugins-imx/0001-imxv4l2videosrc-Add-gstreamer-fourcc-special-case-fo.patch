@@ -1,0 +1,31 @@
+From a830b0c27f3d42a1d89d285dda6b8c90a8ed15f0 Mon Sep 17 00:00:00 2001
+From: Pushpal Sidhu <psidhu@gateworks.com>
+Date: Fri, 24 Jul 2015 16:45:59 -0700
+Subject: [PATCH] imxv4l2videosrc: Add gstreamer fourcc special case for YUYV
+
+Because GStreamer doesn't have a complete list of fourcc's (mainly due to
+kernel v4l2 always updating), add a special case for YUYV. GStreamer expects
+YUY2 in its place.
+
+Signed-off-by: Pushpal Sidhu <psidhu@gateworks.com>
+---
+ src/v4l2src/v4l2src.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/v4l2src/v4l2src.c b/src/v4l2src/v4l2src.c
+index b16c41d..2daec84 100644
+--- a/src/v4l2src/v4l2src.c
++++ b/src/v4l2src/v4l2src.c
+@@ -295,6 +295,9 @@ static gboolean gst_imx_v4l2src_negotiate(GstBaseSrc *src)
+ 	case V4L2_PIX_FMT_YUV420: /* Special Case for handling YU12 */
+ 		pixel_format = "I420";
+ 		break;
++	case V4L2_PIX_FMT_YUYV: /* Special Case for handling YUYV */
++		pixel_format = "YUY2";
++		break;
+ 	default:
+ 		gst_fmt = gst_video_format_from_fourcc(fmt.fmt.pix.pixelformat);
+ 		pixel_format = gst_video_format_to_string(gst_fmt);
+-- 
+2.4.6
+
