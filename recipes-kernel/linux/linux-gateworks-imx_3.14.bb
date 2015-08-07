@@ -9,7 +9,7 @@ PR = "0"
 DEPENDS += "lzop-native bc-native"
 
 # override URI of source and PR for Gateworks linux-imx kernel
-SRCREV = "8a6c6b0908f309f7dff6334c051699686a8bb196"
+SRCREV = "4ff26599b3d43c32c4dc1bd274bb66d975bfc147"
 SRC_BRANCH = "gateworks_fslc_3.14_1.0.x_ga"
 LOCALVERSION = "-1.0.x_ga+yocto"
 SRC_URI = "git://github.com/Gateworks/linux-imx6.git;protocol=http;branch=${SRC_BRANCH}"
