@@ -11,7 +11,7 @@ IMAGE_INSTALL += "gateworks-test gst-gateworks-apps"
 
 # graphics and gstreamer plugins
 IMAGE_INSTALL += "\
-    packagegroup-fslc-gstreamer1.0-full \
+    packagegroup-fsl-gstreamer1.0-full \
     gstreamer1.0-meta-base \
     gstreamer1.0-plugins-imx \
     gstreamer1.0-rtsp-server \

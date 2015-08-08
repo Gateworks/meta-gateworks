@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-3.0;md5=c79ff39f19dfec6d293
 SECTION = "console/utils"
 RDEPENDS_${PN} = " \
     bash \
-    packagegroup-fslc-gstreamer1.0-full \
+    packagegroup-fsl-gstreamer1.0-full \
     alsa-utils alsa-lib alsa-state \
     fb-test fbset \
     v4l-utils \
