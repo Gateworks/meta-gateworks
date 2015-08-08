@@ -13,14 +13,24 @@ SRC_URI = " \
     file://fw_env_usd.config \
 "
 
-FW_UTILS_CONFIG_FILE ?= "fw_env_nand.config"
-
 do_install_append() {
     install -m 0644 ${WORKDIR}/fw_env_nand.config ${D}${sysconfdir}/fw_env_nand.config
     install -m 0644 ${WORKDIR}/fw_env_usd.config ${D}${sysconfdir}/fw_env_usd.config
-    cd ${D}${sysconfdir}
-    ln -sf ${FW_UTILS_CONFIG_FILE} fw_env.config
-    cd -
+}
+
+pkg_postinst_${PN}() {
+#!/bin/sh -e
+
+if [ x"$D" = "x" ]; then # Only run on boot time
+    cd ${sysconfdir}
+    if [ -c /dev/mtd1 ]; then
+        ln -sf fw_env_nand.config fw_env.config
+    else
+        ln -sf fw_env_usd.config fw_env.config
+    fi
+else
+    exit 1
+fi
 }
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
