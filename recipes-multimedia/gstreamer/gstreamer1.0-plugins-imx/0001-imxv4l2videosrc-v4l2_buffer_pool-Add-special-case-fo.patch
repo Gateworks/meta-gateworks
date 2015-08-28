@@ -1,4 +1,4 @@
-From fc35dd95930a0e6c70e0d9d891c6bab36f096ed7 Mon Sep 17 00:00:00 2001
+From d91247bc05bd4ba2cf0231d1e8d57a15094c203d Mon Sep 17 00:00:00 2001
 From: Pushpal Sidhu <psidhu@gateworks.com>
 Date: Fri, 10 Jul 2015 12:45:55 -0700
 Subject: [PATCH] imxv4l2videosrc: v4l2_buffer_pool: Add special case for
@@ -13,19 +13,19 @@ Signed-off-by: Pushpal Sidhu <psidhu@gateworks.com>
  1 file changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/v4l2src/v4l2_buffer_pool.c b/src/v4l2src/v4l2_buffer_pool.c
-index 9146c32..b5fe8a9 100644
+index 1102f1e..e68b00a 100644
 --- a/src/v4l2src/v4l2_buffer_pool.c
 +++ b/src/v4l2src/v4l2_buffer_pool.c
-@@ -137,6 +137,7 @@ static GstFlowReturn gst_imx_v4l2_buffer_pool_alloc_buffer(GstBufferPool *bpool,
- 	GstImxV4l2Meta *meta;
+@@ -138,6 +138,7 @@ static GstFlowReturn gst_imx_v4l2_buffer_pool_alloc_buffer(GstBufferPool *bpool,
  	GstImxPhysMemMeta *phys_mem_meta;
  	GstVideoInfo *info;
+ 	GstVideoCropMeta *meta_crop;
 +	struct v4l2_capability cap = {0};
  
  	buf = gst_buffer_new();
  	if (buf == NULL)
-@@ -166,10 +167,17 @@ static GstFlowReturn gst_imx_v4l2_buffer_pool_alloc_buffer(GstBufferPool *bpool,
- 	g_assert(meta->mem);
+@@ -176,10 +177,17 @@ static GstFlowReturn gst_imx_v4l2_buffer_pool_alloc_buffer(GstBufferPool *bpool,
+ 	}
  
  	phys_mem_meta = GST_IMX_PHYS_MEM_META_ADD(buf);
 -	phys_mem_meta->phys_addr = meta->vbuffer.m.offset;
@@ -46,5 +46,5 @@ index 9146c32..b5fe8a9 100644
  	if (pool->add_videometa)
  	{
 -- 
-2.4.3
+2.5.0
 
