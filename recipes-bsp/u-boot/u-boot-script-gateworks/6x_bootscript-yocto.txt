@@ -136,7 +136,7 @@ if test -z "${video}" ; then
 	setenv video "${video}"
     fi
 fi
-setenv extra "${extra}" galcore.gpu3DMinClock=3
+setenv extra "${extra}" galcore.initgpu3DMinClock=3
 echo "Video configuration used from env video: $video"
 
 echo "## End Gateworks Ventana Yocto Bootscript ${_bscriptver} ################"
