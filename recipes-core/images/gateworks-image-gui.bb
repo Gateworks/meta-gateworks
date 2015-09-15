@@ -7,7 +7,7 @@ IMAGE_FEATURES += "x11-base x11-sato hwcodecs"
 # Install browser and x11
 IMAGE_INSTALL += "\
     packagegroup-core-x11-sato \
-    midori \
+    epiphany \
 "
 
 # FSL Specific Packages
