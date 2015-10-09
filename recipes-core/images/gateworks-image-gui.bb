@@ -2,6 +2,8 @@ require gateworks-image-test.bb
 
 DESCRIPTION = "A simple X11 based image that includes a web browser"
 
+LICENSE = "MIT"
+
 IMAGE_FEATURES += "x11-base x11-sato hwcodecs"
 
 # Install browser and x11
