@@ -1,10 +1,8 @@
-require recipes-core/images/core-image-base.bb
+require gateworks-image-minimal.bb
 
-DESCRIPTION = "Gateworks Test Image"
+DESCRIPTION = "Gateworks Test Image capable of doing A/V"
 
 LICENSE = "MIT"
-
-IMAGE_FEATURES += "package-management"
 
 # Gateworks test tools
 IMAGE_INSTALL += "gateworks-test gst-gateworks-apps"
