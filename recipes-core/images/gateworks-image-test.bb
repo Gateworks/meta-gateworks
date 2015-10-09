@@ -2,7 +2,7 @@ require recipes-core/images/core-image-base.bb
 
 DESCRIPTION = "Gateworks Test Image"
 
-LICENSE = "GPLv3"
+LICENSE = "MIT"
 
 IMAGE_FEATURES += "package-management"
 
