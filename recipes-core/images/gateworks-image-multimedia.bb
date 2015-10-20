@@ -7,6 +7,11 @@ LICENSE = "MIT"
 # Gateworks test tools
 IMAGE_INSTALL += "gateworks-test gst-gateworks-apps"
 
+# Test packages
+IMAGE_INSTALL += "\
+    imx-test \
+"
+
 # graphics and gstreamer plugins
 IMAGE_INSTALL += "\
     packagegroup-fslc-gstreamer1.0-full \
