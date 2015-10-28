@@ -1,4 +1,4 @@
-setenv _bscriptver "v1.04"
+setenv _bscriptver "v1.05"
 
 echo "## Gateworks Ventana Yocto Bootscript ${_bscriptver} ####################"
 
@@ -43,13 +43,11 @@ if test -z "${video}" ; then
 
     # Detect displays if req'd (HDMI->LVDS->CVBS)
     if test -z "$display" ; then
-	if test -z "$panel" ; then
-	    # Start detection scheme
-	    i2c dev 2
-	    if hdmidet ; then # HDMI
-		setenv display "$display" "HDMI"
-		echo "HDMI Detected"
-	    fi
+	# Start detection scheme
+	i2c dev 2
+	if hdmidet ; then # HDMI
+	    setenv display "$display" "HDMI"
+	    echo "HDMI Detected"
 	fi
     fi
 
@@ -94,13 +92,11 @@ if test -z "${video}" ; then
 	fi
     done
 
-    # Mark the rest of the displays to 'off' if panel is not set
-    if test -z "$panel" ; then
-	while test "$fb_num" -le "$max_disp" ; do
-	    setenv video "$video" "video=mxcfb${fb_num}:off"
-	    setexpr fb_num $fb_num + 1
-	done
-    fi
+    # Mark the rest of the displays to 'off'
+    while test "$fb_num" -le "$max_disp" ; do
+	setenv video "$video" "video=mxcfb${fb_num}:off"
+	setexpr fb_num $fb_num + 1
+    done
 
     # Set only if video is set
     if test -n "$video" ; then
