@@ -1,4 +1,4 @@
-setenv _bscriptver "v1.03"
+setenv _bscriptver "v1.04"
 
 echo "## Gateworks Ventana Yocto Bootscript ${_bscriptver} ####################"
 
@@ -49,18 +49,6 @@ if test -z "${video}" ; then
 	    if hdmidet ; then # HDMI
 		setenv display "$display" "HDMI"
 		echo "HDMI Detected"
-	    fi
-	    if i2c probe 0x04 ; then # Freescale MXC-LVDS1
-		setenv display "$display" "LVDS"
-		echo "LVDS Detected"
-	    fi
-	    if i2c probe 0x14 ; then # DLC800FIGT3
-		setenv display "$display" "LVDS"
-		echo "LVDS Detected"
-	    fi
-	    if i2c probe 0x38 ; then # DLC700JMGT4
-		setenv display "$display" "LVDS"
-		echo "LVDS Detected"
 	    fi
 	fi
     fi
