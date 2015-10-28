@@ -1,4 +1,4 @@
-setenv _bscriptver "v1.02"
+setenv _bscriptver "v1.03"
 
 echo "## Gateworks Ventana Yocto Bootscript ${_bscriptver} ####################"
 
@@ -105,23 +105,6 @@ if test -z "${video}" ; then
 	    echo "${disp} is an unsupported display type (HDMI|LVDS|CVBS)."
 	fi
     done
-
-    # Add CVBS display if !(HDMI || LVDS || CVBS || DISPLAY || PANEL)
-    if test -z "$hdmi_flag" ; then
-	if test -z "$lvds_flag" ; then
-	    if test -z "$cvbs_flag" ; then
-		if test -z "$display" ; then
-		    if test -z "$panel" ; then
-			setenv cvbs_flag 1
-			setenv video "$video" "video=mxcfb${fb_num}:dev=adv739x,BT656-NTSC,if=BT656,fbpix=RGB565,bpp=32"
-
-			echo "Defaulting CVBS Display to mxcfb${fb_num}"
-			setexpr fb_num $fb_num + 1
-		    fi
-		fi
-	    fi
-	fi
-    fi
 
     # Mark the rest of the displays to 'off' if panel is not set
     if test -z "$panel" ; then
