@@ -43,6 +43,7 @@ IMAGE_INSTALL += " \
     dnsmasq \
     dropbear \
     hostapd \
+    hostapd-conf \
     iproute2 \
     iw \
     linux-firmware-gateworks \
