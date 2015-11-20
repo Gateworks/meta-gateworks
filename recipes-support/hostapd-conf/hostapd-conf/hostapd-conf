@@ -1,0 +1,754 @@
+#!/bin/sh
+
+# Copyright (C) 2015 Gateworks Corporation
+# Author: Pushpal Sidhu <psidhu@gateworks.com>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with hostapd-conf. If not, see <http://www.gnu.org/licenses/>.
+
+# Dependencies: iw, sed, printf, grep, cut, cat
+
+## Globals #############################################################
+VERSION="v1.0"
+TRUE=1; FALSE=0
+
+ec_okay=0       # Okay Exit
+ec_general=1    # Exit due to general reason
+ec_usage=2      # Exit due to incorrect usage
+ec_iface=3      # Exit due to bad iface
+ec_ssid=4       # Exit due to missing ssid
+ec_channel=5    # Exit due to bad channel
+ec_htmode=6     # Exit due to bad htmode
+ec_passphrase=7 # Exit due to bad passphrase
+ec_wds=8        # Exit due to bad WDS param
+ec_empty=9      # Exit due to empty argument
+
+cleanup() {
+    local ec=$?
+    case ${ec} in
+        # Don't print info if error is one of the following
+        ${ec_okay}|${ec_general}|${ec_usage}|${ec_iface}|${ec_passphrase});;
+        *) printf "\n"
+           get_phy PHY ${IFACE}
+           list_info "${PHY}";;
+    esac
+}
+trap cleanup 0 # 0 - On script exit
+
+## Helper Functions ####################################################
+# Print usage and exit
+# $1 - (optional) Exit Code
+usage() {
+    local ec=${1:-${ec_okay}}
+    local prog="${0##*/}"
+
+    cat <<EOF
+${prog} [OPTIONS] <iface> <ssid> <channel> [<htmode>] [<passphrase>]
+
+Options:
+ --help           - This help
+ --br-name <name> - Name of bridge
+ --wds <0|1>      - Enable WDS
+ --version        - Print this version: ${VERSION}
+
+Example:
+ Print channel information for wlan0 and exit:
+  ${prog} wlan0
+
+ State wlan0 SSID is 'myssid', on channel 6 with WPA2 passphrase "nowayinside":
+  ${prog} wlan0 myssid 6 nowayinside
+
+ State wlan0 is in named bridge br0, enable WDS, SSID 'myssid', channel 6,
+ in HT20(802.11n), with WPA2 passphrase "nowayinside":
+  ${prog} --br-name=br0 --wds=1 wlan0 myssid 6 HT20 nowayinside
+EOF
+    exit ${ec}
+}
+
+# Place value of var into variable
+# $1 Variable name to assign
+# $2 And Value to assign
+bubble_me_up() {
+    # Unset the variable name and set it
+    if unset -v "$1"; then
+        eval $1=\"\$2\"
+    fi
+}
+
+# Trim whitespace in front and back of a string
+# $1 - Variable name to place trimmed string into
+# $2 - String
+trim() {
+    local _rv="${1}"
+    local _vals="${2}"
+    local tmp=
+    tmp=$(printf "${_vals}" | sed -e 's/^ *//' -e 's/ *$//')
+    bubble_me_up "${_rv}" "${tmp}"
+}
+
+# Returns ${TRUE} if variable was found in list (space sep)
+# $1 - Return value name
+# $2 - Needle
+# $@ - Haystack
+find_in_list() {
+    local _rv="${1}";shift
+    local needle="${1}";shift
+    local haystack=" ${@} "
+    local _ret="${FALSE}"
+
+    [ "${haystack%% ${needle} *}" = "${haystack}" ] || _ret="${TRUE}"
+    [ -z "${needle}" ] && _ret="${FALSE}"
+    bubble_me_up "${_rv}" "${_ret}"
+}
+
+# Prints variable and it's value in a nice list
+# $1 - keys (optional)
+dump_settings() {
+    local keys="${1:-${SETTINGS}}"
+    local pad=":                                           "
+
+    # Determine longest string in keys
+    local len=0 padlength=0
+    for key in ${keys}; do [ ${#key} -gt ${len} ] && len=${#key}; done
+    padlength=$((len+2))
+
+    printf "Settings:\n"
+    for key in ${keys}; do
+        # local val=${!key} # Some shells don't support indirect referencing
+        eval "local val=\$${key}"
+
+        printf " %s" "$key"
+        printf '%*.*s' 0 $((padlength - ${#key})) "$pad"
+        printf "%s\n" "${val}"
+    done
+    printf "\n"
+}
+
+# Checkbit - checks if bits are set
+# $1 - Register value (Pass in 0x in front if hex)
+# $2 - bits to check (Pass in 0x in front if hex)
+# $3 - (optional) value to compare to (Pass in 0x in front if hex)
+cb() {
+    local reg=$(printf "%d" "${1}")
+    local bits=$(printf "%d" "${2}")
+    local value=$(printf "%d" "${3:-${bits}}")
+    if [ $((${reg} & ${bits})) -eq ${value} ]; then
+        printf "${TRUE}"
+    fi
+}
+
+# Returns phy of iface
+# $1 - Return Variable Name
+# $2 - (optional) IFACE
+get_phy() {
+    local _rv="${1}"
+    local iface="${2:-${IFACE}}"
+
+    local wlandir=/sys/class/net
+    local wlanpath="${wlandir}/${iface}"
+    [ -e ${wlanpath}/phy80211/name ] || {
+        printf "ERROR: '${iface}' is not a valid iface\n"
+        exit ${ec_iface}
+    }
+
+    # get phy associated with this wlan
+    phy=$(cat ${wlanpath}/phy80211/name)
+    bubble_me_up "${_rv}" "${phy}"
+}
+
+# Calculates freq of a channel (support for 2.4 and 5ghz only)
+# $1 - Return Variable Name
+# $2 - (optional) Channel
+get_freq() {
+    local _rv="${1}"
+    local channel="${2:-${CHANNEL:-0}}"
+    local _ret=-1
+
+    [ ${channel} -le 14 ] && _ret=$((2407 + $((5*${channel}))))
+    [ ${channel} -gt 14 ] && _ret=$((5000 + $((5*${channel}))))
+    [ ${channel} -eq 0  ] && _ret="0000"
+
+    bubble_me_up "${_rv}" "${_ret}"
+}
+
+# Get lines in iw phy <phy> info of specified band
+# $1 - Returns lineno of start of band
+# $2 - Returns lineno of end of band
+# $3 - (optional) Band to check e.g. "1" or "2"
+# $4 - (optional) PHY
+get_band_lineno() {
+    local _lnstart="${1}"
+    local _lnend="${2}"
+    local band="${3:-1}"
+    local phy="${4:-${PHY}}"
+    local lstart=0 lend=0
+
+    lstart=$(iw phy ${phy} info | grep -n "Band ${band}:" | cut -d':' -f1)
+    lstart=${lstart:--1}
+    lend=$(iw phy ${phy} info | grep -n "Band $((band+1)):" | cut -d':' -f1)
+    lend=${lend:-$(iw phy ${phy} info | wc -l)}
+
+    bubble_me_up "${_lnstart}" "${lstart}"
+    bubble_me_up "${_lnend}" "${lend}"
+}
+
+# Get's all bands on phy
+# $1 - Return variable name
+# $2 - (optional) PHY
+get_bands() {
+    local _rv="${1}"
+    local phy="${2:-${PHY}}"
+    local _ret=""
+    # Get bands in space sep. list
+    _ret=$(iw phy ${phy} info | grep "Band [0-9]:" | grep -o [0-9] \
+                  | sed ':a;N;$!ba;s/\n/ /g')
+    bubble_me_up "${_rv}" "${_ret}"
+}
+
+# Return channels for a specified band
+# $1 - Return variable name - Returns
+# $2 - Band to check e.g. "1" or "2"
+# $3 - (optional) PHY
+get_channels_band() {
+    local _rv="${1}"
+    local band="${2}"
+    local phy="${3:-${PHY}}"
+    local _ret="0"
+    local lineno_start=0 lineno_end=0 tmp=
+
+    get_band_lineno lineno_start lineno_end "${band}" "${phy}"
+    tmp=$(iw phy ${phy} info | sed -n "$lineno_start","$lineno_end"p \
+                  | grep " MHz " | grep -v "no IR\|disabled" \
+                  | sed 's/ /./g' | sed 's/\t/./g')
+    for l in ${tmp}; do
+        _ret="${_ret} $(printf "${l}" | cut -d'[' -f2 | cut -d']' -f1)"
+    done
+    trim _ret "${_ret}"
+    bubble_me_up "${_rv}" "${_ret}"
+}
+
+# Return channels for all bands
+# $1 - Return variable name - Returns all supported channels
+# $2 - (optional) PHY
+get_channels_all() {
+    local _rv="${1}"
+    local phy="${2:-${PHY}}"
+    local bands=""
+    local total_ret="" band_ret=""
+
+    get_bands bands "${phy}"
+    for i in ${bands}; do
+        get_channels_band band_ret "${i}" "${phy}"
+        total_ret="${total_ret} ${band_ret}"
+    done
+
+    bubble_me_up "${_rv}" "${total_ret}"
+}
+
+# Return htmodes for a specified band
+# $1 - Return variable name - Returns
+# $2 - Band to check e.g. "1" or "2"
+# $3 - (optional) PHY
+# $4 - (optional) Channel to check
+get_htmodes_band() {
+    local _rv="${1}"
+    local band="${2}"
+    local phy="${3:-${PHY}}"
+    local channel="${4:-${CHANNEL:-0}}"
+    local _ret=""
+    local lineno_start=0 lineno_end=0
+    local ht40= freq= hwmode=
+
+    get_band_lineno lineno_start lineno_end "${band}" "${phy}"
+
+    ht_cap=$(iw phy ${phy} info | sed -n "$lineno_start","$lineno_end"p \
+                    | grep "Capabilities: " | cut -d" " -f2)
+    vht_cap=$(iw phy ${phy} info | sed -n "$lineno_start","$lineno_end"p \
+                     | grep "VHT C" |cut -d"(" -f2|cut -d")" -f1)
+
+    [ $(cb "${ht_cap}" "0x20") ] && _ret="${_ret} HT20"
+    [ $(cb "${ht_cap}" "0x40") ] && {
+        # Now attempt to give best case for HT40
+        get_freq freq ${channel:-0}
+        [ "$freq" -lt 4000 ] && hwmode="g"
+        [ "$freq" -ge 4000 ] && hwmode="a"
+
+        # This next section was mostly taken from
+        # OpenWrt /lib/netifd/wireless/mac80211.sh
+        case "${hwmode}" in
+            a)
+                case "$(( (${channel} / 4) % 2 ))" in
+                    1) ht40="HT40+";;
+                    0) ht40="HT40-";;
+                esac # case "$(( (${channel} / 4) % 2 ))"
+                ;;
+            *)
+                [ "${channel}" -le 9 ] && ht40="HT40+"
+                [ "${channel}" -ge 5 ] && ht40="${ht40} HT40-"
+                ;;
+        esac # case "${hwmode}"
+
+        [ "${channel}" = "0" ] && ht40="HT40+ HT40-"
+
+        trim ht40 "${ht40}"
+        _ret="${_ret} HT40 ${ht40}"
+    }
+    [ $(cb "${vht_cap}" "0x20") ] && _ret="${_ret} VHT20 VHT40 VHT80"
+    [ $(cb "${vht_cap}" "0x40") ] && _ret="${_ret} VHT160"
+
+    trim _ret "${_ret}"
+    bubble_me_up "${_rv}" "${_ret}"
+}
+
+# Return htmodes for all bands
+# $1 - Return variable name - Returns all supported HT modes
+# $2 - (optional) PHY
+get_htmodes_all() {
+    local _rv="${1}"
+    local phy="${2:-${PHY}}"
+    local bands=""
+    local total_ret="" local band_ret=""
+
+    get_bands bands "${phy}"
+    for i in ${bands}; do
+        get_htmodes_band band_ret "${i}" "${phy}"
+        total_ret="${total_ret} ${band_ret}"
+    done
+
+    bubble_me_up "${_rv}" "${total_ret}"
+}
+
+# Lists info about each band and supported channels etc
+# $1 - (optional) PHY
+list_info() {
+    local phy="${1:-${PHY}}"
+    local channels= freq= htmodes= bands=
+    local pad="                                            "
+    local padlength=9 # num characters in "Channel" + 2
+
+    printf "Available Channel Information on ${phy}\n"
+    printf "=====================================\n"
+    get_bands bands "${phy}"
+    for i in ${bands}; do
+        get_channels_band channels "${i}" "${phy}"
+
+        printf "Band ${i}:\n"
+        printf "Channel"
+        printf '%*.*s' 0 2 "${pad}"
+        printf "Freq  Allowed HT Modes\n"
+        for j in ${channels}; do
+            get_freq freq "${j}"
+            get_htmodes_band htmodes "${i}" "${phy}" "${j}"
+
+            printf "%s" "${j}"
+            printf '%*.*s' 0 $((padlength - ${#j})) "${pad}"
+            printf "%s  %s\n" "${freq}" "${htmodes}"
+        done
+        printf "\n"
+    done
+}
+
+# Validates user input
+# $1 - (optional) settings to validate
+validate_info() {
+    local settings="${@:-SETTINGS}"
+    local ec= data= ans=
+
+    for setting in ${settings}; do
+        eval "local val=\$${setting}"
+
+        case "${setting}" in
+            SSID)
+                [ -z "${val}" ] && {
+                    printf "ERROR: ${setting} is empty\n"
+                    exit ${ec_ssid}
+                }
+                ;;
+            CHANNEL)
+                get_channels_all data
+
+                find_in_list ec "${CHANNEL}" "${data}"
+                [ "${ec}" = "${TRUE}" ] && continue
+
+                printf "ERROR: Select a valid channel\n"
+                exit ${ec_channel}
+                ;;
+            HTMODE)
+                # Skip check if empty
+                [ -z "${val}" ] && continue
+
+                # Determine band ${CHANNEL} sits in
+                local cband=-1
+                for band in ${BANDS}; do
+                    get_channels_band data "${band}" "${PHY}" "${CHANNEL}"
+                    find_in_list ec "${CHANNEL}" "${data}"
+                    [ "${ec}" = "${FALSE}" ] && continue
+                    cband="${band}"
+                    break
+                done
+
+                # Now determine htmodes for this channel
+                get_htmodes_band data "${cband}" "${PHY}" "${CHANNEL}"
+                find_in_list ec "${HTMODE}" "${data}"
+                [ "${ec}" = "${TRUE}" ] && continue
+
+                printf "ERROR: Select a valid HTMODE\n"
+                exit ${ec_htmode}
+                ;;
+            PASSPHRASE)
+                # WPA2 passphrase must be between 8..63 characters
+                if [ "${#val}" -lt 8 -o "${#val}" -gt 63 ]; then
+                    printf "ERROR: Passphrase must be 8..63 characters\n"
+                    exit ${ec_passphrase}
+                fi
+                ;;
+            WDS)
+                [ "${WDS}" = "0" -o "${WDS}" = "1" ] || {
+                    printf "ERROR: WDS must be a 0|1\n"
+                    exit ${ec_wds}
+                }
+                ;;
+            *)
+                [ -z "${val}" ] && {
+                    printf "ERROR: ${setting} is empty\n"
+                    exit ${ec_empty}
+                }
+                ;;
+        esac
+    done
+}
+
+# Determine htcapab= line for hostapd.conf
+# Writes to global HT_CAPAB var
+# $1 - (optional) PHY device
+get_ht_capab() {
+    local phy="${1:-${PHY}}"
+    local ht_cap=0
+
+    # Get car caps
+    for cap in $(iw phy ${phy} info | grep "Capabilities: " | cut -d" " -f2); do
+        ht_cap="$((ht_cap | cap))"
+    done
+
+    [ "${ht_cap}" = "0" ] && {
+        return
+    }
+
+    # This next section was mostly taken from
+    # OpenWrt /lib/netifd/wireless/mac80211.sh
+    case "${HTMODE}" in
+        VHT20|HT20) ;;
+        HT40*|VHT40|VHT80|VHT160)
+            case "${HWMODE}" in
+                a)
+                    case "$(( (${CHANNEL} / 4) % 2 ))" in
+                        1) HT_CAPAB="${HT_CAPAB}[HT40+]";;
+                        0) HT_CAPAB="${HT_CAPAB}[HT40-]";;
+                    esac
+                    ;;
+
+                *)
+                    case "${HTMODE}" in
+                        HT40?) HT_CAPAB="${HT_CAPAB}[${HTMODE}]";;
+                        *)
+                            if [ "${CHANNEL}" -lt 7 ]; then
+                                HT_CAPAB="${HT_CAPAB}[HT40+]"
+                            else
+                                HT_CAPAB="${HT_CAPAB}[HT40-]"
+                            fi
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+        *) HT_CAPAB=
+           return
+           ;;
+    esac
+
+    IEEE80211N=1
+    [ $(cb "${ht_cap}" "0x1") ] && HT_CAPAB="${HT_CAPAB}[LDPC]"
+    [ $(cb "${ht_cap}" "0x10") ] && HT_CAPAB="${HT_CAPAB}[GF]"
+    [ $(cb "${ht_cap}" "0x20") ] && HT_CAPAB="${HT_CAPAB}[SHORT-GI-20]"
+    [ $(cb "${ht_cap}" "0x40") ] && HT_CAPAB="${HT_CAPAB}[SHORT-GI-40]"
+    [ $(cb "${ht_cap}" "0x80") ] && HT_CAPAB="${HT_CAPAB}[TX-STBC]"
+    [ $(cb "${ht_cap}" "0x300" "0x100") ] && HT_CAPAB="${HT_CAPAB}[RX-STBC1]"
+    [ $(cb "${ht_cap}" "0x300" "0x200") ] && HT_CAPAB="${HT_CAPAB}[RX-STBC12]"
+    [ $(cb "${ht_cap}" "0x300" "0x300") ] && HT_CAPAB="${HT_CAPAB}[RX-STBC123]"
+    [ $(cb "${ht_cap}" "0x1000") ] && HT_CAPAB="${HT_CAPAB}[DSSS_CCK-40]"
+}
+
+# Determine vhtcapab= line for hostapd.conf
+# Write to global VHT_CAPAB var
+# $1 - (optional) PHY device
+get_vht_capab() {
+    local phy="${1:-${PHY}}"
+    local vht_cap=0
+
+    # determine vht_capab
+    for cap in $(iw phy ${phy} info | grep "VHT C" |cut -d"(" -f2|cut -d")" -f1); do
+        vht_cap="$((vht_cap | cap))"
+    done
+
+    [ "${vht_cap}" = "0" ] && {
+        return
+    }
+
+    # This next section was mostly taken from
+    # OpenWrt /lib/netifd/wireless/mac80211.sh
+    local channel=${CHANNEL}
+    local idx=${CHANNEL}
+    case "${HTMODE}" in
+        VHT20) ;;
+        VHT40)
+            case "$(( (channel / 4) % 2 ))" in
+                1) idx=$((channel + 2));;
+                0) idx=$((channel - 2));;
+            esac
+            VHT_OPER_CHWIDTH="0"
+            VHT_OPER_CENTR_FREQ_SEG0_IDX="${idx}"
+            ;;
+        VHT80)
+            case "$(( (channel / 4) % 4 ))" in
+                1) idx=$((channel + 6));;
+                2) idx=$((channel + 2));;
+                3) idx=$((channel - 2));;
+                0) idx=$((channel - 6));;
+            esac
+            VHT_OPER_CHWIDTH="1"
+            VHT_OPER_CENTR_FREQ_SEG0_IDX="${idx}"
+            ;;
+        VHT160)
+            case "$channel" in
+                36|40|44|48|52|56|60|64) idx="50";;
+                100|104|108|112|116|120|124|128) idx="114";;
+            esac
+            VHT_OPER_CHWIDTH="2"
+            VHT_OPER_CENTR_FREQ_SEG0_IDX="${idx}"
+            ;;
+        *)
+            VHT_CAPAB=
+            return
+            ;;
+    esac
+
+    IEEE80211AC=1
+    [ $(cb "${vht_cap}" "0x10") ] && VHT_CAPAB="${VHT_CAPAB}[RXLDPC]"
+    [ $(cb "${vht_cap}" "0x20") ] && VHT_CAPAB="${VHT_CAPAB}[SHORT-GI-80]"
+    [ $(cb "${vht_cap}" "0x40") ] && VHT_CAPAB="${VHT_CAPAB}[SHORT-GI-160]"o
+    [ $(cb "${vht_cap}" "0x80") ] && VHT_CAPAB="${VHT_CAPAB}[TX-STBC-2BY1]"
+    [ $(cb "${vht_cap}" "0x800") ] && VHT_CAPAB="${VHT_CAPAB}[SU-BEAMFORMER]"
+    [ $(cb "${vht_cap}" "0x1000") ] && VHT_CAPAB="${VHT_CAPAB}[SU-BEAMFORMEE]"
+    [ $(cb "${vht_cap}" "0x80000") ] && VHT_CAPAB="${VHT_CAPAB}[MU-BEAMFORMER]"
+    [ $(cb "${vht_cap}" "0x100000") ] && VHT_CAPAB="${VHT_CAPAB}[MU-BEAMFORMEE]"
+    [ $(cb "${vht_cap}" "0x200000") ] && VHT_CAPAB="${VHT_CAPAB}[VHT-TXOP-PS]"
+    [ $(cb "${vht_cap}" "0x400000") ] && VHT_CAPAB="${VHT_CAPAB}[HTC-VHT]"
+    [ $(cb "${vht_cap}" "0x10000000") ] && VHT_CAPAB="${VHT_CAPAB}[RX-ANTENNA-PATTERN]"
+    [ $(cb "${vht_cap}" "0x20000000") ] && VHT_CAPAB="${VHT_CAPAB}[TX-ANTENNA-PATTERN]"
+
+    [ $(cb "${vht_cap}" "0x700" "0x100") ] && VHT_CAPAB="${VHT_CAPAB}[RX-STBC1]"
+    [ $(cb "${vht_cap}" "0x700" "0x200") ] && VHT_CAPAB="${VHT_CAPAB}[RX-STBC12]"
+    [ $(cb "${vht_cap}" "0x700" "0x300") ] && VHT_CAPAB="${VHT_CAPAB}[RX-STBC123]"
+    [ $(cb "${vht_cap}" "0x700" "0x400") ] && VHT_CAPAB="${VHT_CAPAB}[RX-STBC1234]"
+
+    # max mpdu length
+    local vht_max_mpdu_hw=3895
+    local vht_max_mpdu_len
+    [ "$(($vht_cap & 3))" -ge 1 ] && vht_max_mpdu_hw=7991
+    [ "$(($vht_cap & 3))" -ge 2 ] && vht_max_mpdu_hw=11454
+    [ "${vht_max_mpdu_hw}" != 3895 ] && \
+        VHT_CAPAB="${VHT_CAPAB}[MAX-MPDU-${vht_max_mpdu_hw}]"
+
+    # maximum A-MPDU length exponent
+    local vht_max_a_mpdu_len_exp_hw=0
+    [ "$(($vht_cap & 58720256))" -ge 8388608 ] && vht_max_a_mpdu_len_exp_hw=1
+    [ "$(($vht_cap & 58720256))" -ge 16777216 ] && vht_max_a_mpdu_len_exp_hw=2
+    [ "$(($vht_cap & 58720256))" -ge 25165824 ] && vht_max_a_mpdu_len_exp_hw=3
+    [ "$(($vht_cap & 58720256))" -ge 33554432 ] && vht_max_a_mpdu_len_exp_hw=4
+    [ "$(($vht_cap & 58720256))" -ge 41943040 ] && vht_max_a_mpdu_len_exp_hw=5
+    [ "$(($vht_cap & 58720256))" -ge 50331648 ] && vht_max_a_mpdu_len_exp_hw=6
+    [ "$(($vht_cap & 58720256))" -ge 58720256 ] && vht_max_a_mpdu_len_exp_hw=7
+    VHT_CAPAB="${VHT_CAPAB}[MAX-A-MPDU-LEN-EXP${vht_max_a_mpdu_len_exp_hw}]"
+
+    # whether or not the STA supports link adaptation using VHT variant
+    local vht_link_adapt_hw=0
+    [ "$(($vht_cap & 201326592))" -ge 134217728 ] && vht_link_adapt_hw=2
+    [ "$(($vht_cap & 201326592))" -ge 201326592 ] && vht_link_adapt_hw=3
+    [ "${vht_link_adapt_hw}" != 0 ] && \
+        VHT_CAPAB="${VHT_CAPAB}[VHT-LINK-ADAPT-${vht_link_adapt_hw}]"
+}
+
+# Write out a hostapd.conf
+# $1 - (optional) Filename to write to
+write_hostapd_conf() {
+    local conf_file=${1:-hostapd-${PHY}.conf}
+
+    cat <<EOF | grep . > ${conf_file}
+# For more options, please visit the following:
+#  http://linuxwireless.org/en/users/Documentation/hostapd/
+
+driver=${DRIVER}
+logger_syslog=-1
+logger_syslog_level=2
+logger_stdout=-1
+logger_stdout_level=2
+
+# a=5GHz, g=2.4GHz
+hw_mode=${HWMODE}
+
+# channel=0 turns on ACS survey
+channel=${CHANNEL}
+
+# Please take the following into consideration:
+# Country code (ISO/IEC 3166-1). Used to set regulatory domain.
+# Set as needed to indicate country in which device is operating.
+# This can limit available channels and transmit power.
+#country_code=US
+
+# Enable IEEE 802.11d. This advertises the country_code and the set of allowed
+# channels and transmit power levels based on the regulatory limits. The
+# country_code setting must be configured with the correct country for
+# IEEE 802.11d functions.
+# (default: 0 = disabled)
+#ieee80211d=1
+
+# Enable IEEE 802.11h. This enables radar detection and DFS support if
+# available. DFS support is required on outdoor 5 GHz channels in most countries
+# of the world. This can be used only with ieee80211d=1.
+# (default: 0 = disabled)
+#ieee80211h=1
+
+interface=${IFACE}
+ctrl_interface=/var/run/hostapd
+ctrl_interface_group=0
+
+disassoc_low_ack=1
+preamble=1
+wmm_enabled=1
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+${PASSPHRASE:+# Put a 3 here if you want both WPA/WPA2}
+${PASSPHRASE:+wpa=2}
+${PASSPHRASE:+wpa_passphrase=${PASSPHRASE}}
+${PASSPHRASE:+wpa_key_mgmt=WPA-PSK}
+${PASSPHRASE:+wpa_pairwise=TKIP}
+${PASSPHRASE:+rsn_pairwise=CCMP}
+
+ssid=${SSID}
+${BR_NAME:+bridge=${BR_NAME}}
+${WDS:+wds_sta=${WDS}}
+${BSSID:+bssid=${BSSID}}
+
+${IEEE80211N:+ieee80211n=${IEEE80211N}}
+${HT_CAPAB:+ht_capab=${HT_CAPAB}}
+
+${IEEE80211AC:+ieee80211ac=${IEEE80211AC}}
+${VHT_CAPAB:+vht_oper_chwidth=${VHT_OPER_CHWIDTH}}
+${VHT_CAPAB:+vht_oper_centr_freq_seg0_idx=${VHT_OPER_CENTR_FREQ_SEG0_IDX}}
+${VHT_CAPAB:+vht_capab=${VHT_CAPAB}}
+
+EOF
+
+    printf "Written to ${conf_file}\n"
+}
+
+
+## Main ################################################################
+# Globals
+IFACE=
+CHANNEL=
+HTMODE=
+SSID=
+BSSID=
+PASSPHRASE=
+BR_NAME=
+WDS=
+
+# parse optional args here, then positional after
+while [ "${1}" ]; do
+    case "${1}" in
+        --br-name) BR_NAME="${2}"; shift;;
+        --br-name=*) BR_NAME="$(printf %s ${1} | cut -d'=' -f2)";;
+        --wds) WDS="${2}"; shift;;
+        --wds=*) WDS="$(printf %s ${1} | cut -d'=' -f2)";;
+        --version) printf "Version ${VERSION}\n" && exit ${ec_okay};;
+        --help|-h|-?|help) usage ${ec_okay};;
+        --*) printf "'${1}' is not a valid option\n" && usage ${ec_general};;
+        *) break;;
+    esac # End case "${1}"
+    shift # Shift to next opt
+done
+
+# Assume optional is done
+count=0
+while [ "${1}" ]; do
+    case "${1}" in
+        info) # Keep this undocumented for now
+            get_phy PHY "${IFACE}"
+            list_info "${PHY}"
+            exit ${ec_okay}
+            ;;
+        * ) count=$((count+1))
+            case ${count} in
+                1) IFACE="${1}";;
+                2) SSID="${1}";;
+                3) CHANNEL="${1}"
+                   [ ${CHANNEL} -ge 0 2>/dev/null ] || {
+                       printf "ERROR: '${CHANNEL}' is not a number\n"
+                       exit ${ec_channel}
+                   };;
+                4|5)
+                    case "${1}" in
+                        *HT[248]*) HTMODE="${1}";;
+                        *) PASSPHRASE="${1}";;
+                    esac
+                    ;;
+                *) printf "Too many arguments passed in, ignoring '$1'\n";;
+            esac # End case ${count}
+    esac # End case "${1}"
+    shift # Shift to next opt
+done
+
+# Settings that can't be changed by user
+DRIVER="nl80211"
+PHY=
+FREQ=
+BANDS=
+IEEE80211N=0
+HT_CAPAB=
+IEEE80211AC=0
+VHT_CAPAB=
+VHT_OPER_CHWIDTH=
+VHT_OPER_CENTR_FREQ_SEG0_IDX=
+
+[ "${IFACE}" ] || usage ${ec_iface}
+get_phy PHY ${IFACE}
+get_freq FREQ ${CHANNEL:-0}
+[ "$FREQ" -lt 4000 ] && HWMODE="g"
+[ "$FREQ" -ge 4000 ] && HWMODE="a"
+get_bands BANDS "${PHY}"
+
+SETTINGS="IFACE PHY SSID CHANNEL FREQ BANDS HWMODE ${HTMODE:+HTMODE}"
+SETTINGS="${SETTINGS} ${BSSID:+BSSID} ${PASSPHRASE:+PASSPHRASE}"
+SETTINGS="${SETTINGS} ${BR_NAME:+BR_NAME} ${WDS:+WDS}"
+
+validate_info "${SETTINGS}" # Validate all settings
+dump_settings "${SETTINGS}"
+
+# Gather data req'd for hostapd.conf
+get_ht_capab
+get_vht_capab
+write_hostapd_conf
+
+exit ${ec_okay}
