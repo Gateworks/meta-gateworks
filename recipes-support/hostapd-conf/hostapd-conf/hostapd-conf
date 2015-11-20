@@ -387,20 +387,31 @@ validate_info() {
                 # Skip check if empty
                 [ -z "${val}" ] && continue
 
-                # Determine band ${CHANNEL} sits in
-                local cband=-1
-                for band in ${BANDS}; do
-                    get_channels_band data "${band}" "${PHY}" "${CHANNEL}"
-                    find_in_list ec "${CHANNEL}" "${data}"
-                    [ "${ec}" = "${FALSE}" ] && continue
-                    cband="${band}"
-                    break
-                done
+                # If channel 0, do special handling
+                if [ "${CHANNEL}" = "0" ]; then
+                    local cont_flag=
+                    for band in ${BANDS}; do
+                        get_htmodes_band data "${band}" "${PHY}" "${CHANNEL}"
+                        find_in_list ec "${HTMODE}" "${data}"
+                        [ "${ec}" = "${TRUE}" ] && cont_flag=1 && break
+                    done
+                    [ "${cont_flag}" ] && continue
+                else
+                    # Determine band ${CHANNEL} sits in
+                    local cband=-1
+                    for band in ${BANDS}; do
+                        get_channels_band data "${band}" "${PHY}" "${CHANNEL}"
+                        find_in_list ec "${CHANNEL}" "${data}"
+                        [ "${ec}" = "${FALSE}" ] && continue
+                        cband="${band}"
+                        break
+                    done
 
-                # Now determine htmodes for this channel
-                get_htmodes_band data "${cband}" "${PHY}" "${CHANNEL}"
-                find_in_list ec "${HTMODE}" "${data}"
-                [ "${ec}" = "${TRUE}" ] && continue
+                    # Now determine htmodes for this channel
+                    get_htmodes_band data "${cband}" "${PHY}" "${CHANNEL}"
+                    find_in_list ec "${HTMODE}" "${data}"
+                    [ "${ec}" = "${TRUE}" ] && continue
+                fi
 
                 printf "ERROR: Select a valid HTMODE\n"
                 exit ${ec_htmode}
