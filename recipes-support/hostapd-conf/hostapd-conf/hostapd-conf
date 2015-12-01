@@ -228,7 +228,7 @@ get_channels_band() {
 
     get_band_lineno lineno_start lineno_end "${band}" "${phy}"
     tmp=$(iw phy ${phy} info | sed -n "$lineno_start","$lineno_end"p \
-                  | grep " MHz " | grep -v "no IR\|disabled" \
+                  | grep " MHz \[" | grep -v "no IR\|disabled" \
                   | sed 's/ /./g' | sed 's/\t/./g')
     for l in ${tmp}; do
         _ret="${_ret} $(printf "${l}" | cut -d'[' -f2 | cut -d']' -f1)"
@@ -574,7 +574,6 @@ get_vht_capab() {
 
     # max mpdu length
     local vht_max_mpdu_hw=3895
-    local vht_max_mpdu_len
     [ "$(($vht_cap & 3))" -ge 1 ] && vht_max_mpdu_hw=7991
     [ "$(($vht_cap & 3))" -ge 2 ] && vht_max_mpdu_hw=11454
     [ "${vht_max_mpdu_hw}" != 3895 ] && \
