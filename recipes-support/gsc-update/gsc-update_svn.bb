@@ -3,9 +3,9 @@ SECTION = "base"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
-PV = "v1.3+svnr${SRCPV}"
+PV = "v1.4+svnr${SRCPV}"
 
-SRCREV = "707"
+SRCREV = "793"
 SRC_URI = "\
     svn://svn.gateworks.com/openwrt/packages/gateworks/;protocol=http;module=${PN} \
     file://0001-Makefile_remove_stripping.patch \
