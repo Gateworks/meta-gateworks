@@ -16,6 +16,7 @@ IMAGE_INSTALL += " \
     fbset \
     fsl-rc-local \
     glibc-gconv-utf-16 \
+    gpsd \
     gsc-update \
     gwsoc \
     i2c-tools \
@@ -40,8 +41,10 @@ IMAGE_INSTALL += " \
     bridge-utils \
     canutils \
     compat-wireless-all \
+    crda \
     dnsmasq \
     dropbear \
+    ethtool \
     hostapd \
     hostapd-conf \
     iproute2 \
