@@ -5,6 +5,7 @@ SRC_URI += " \
 	file://add_db_txt.patch \
 	file://defconfig \
 	file://ath10k-fix_potential_Rx_ring_corruption.patch \
+	file://ath10k_remove_thermal_no_sta_support_spew.patch \
 "
 
 COMPAT_WIRELESS_VERSION = "${PV}"
