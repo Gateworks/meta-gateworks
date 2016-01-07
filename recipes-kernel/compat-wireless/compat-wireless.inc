@@ -32,3 +32,16 @@ do_configure_prepend() {
 do_install() {
     make -C ${STAGING_KERNEL_DIR} M=${S} INSTALL_MOD_PATH=${D} modules_install
 }
+
+# Python function that returns packages that were split from the main package
+def get_split_modules(d, prepend=""):
+    split_dir = d.getVar('PKGDEST', d)
+    split_files = ""
+    for dir in os.listdir(split_dir):
+        split_files = split_files + " " + str(prepend) + str(dir)
+
+    return str(split_files)
+
+# Add to duplicate files whitelist these specific kernel modules (full path req'd)
+SSTATE_DUPWHITELIST += "${@get_split_modules(d, d.getVar('PKGDATA_DIR', d) + '/runtime/')}"
+SSTATE_DUPWHITELIST += "${@get_split_modules(d, d.getVar('PKGDATA_DIR', d) + '/runtime-reverse/')}"
