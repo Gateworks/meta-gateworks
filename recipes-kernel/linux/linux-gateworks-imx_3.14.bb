@@ -4,7 +4,7 @@
 require recipes-kernel/linux/linux-imx.inc
 require recipes-kernel/linux/linux-dtb.inc
 
-PR = "9"
+PR = "r9"
 
 DEPENDS += "lzop-native bc-native"
 
