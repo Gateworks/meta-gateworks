@@ -33,15 +33,28 @@ do_install() {
     make -C ${STAGING_KERNEL_DIR} M=${S} INSTALL_MOD_PATH=${D} modules_install
 }
 
-# Python function that returns packages that were split from the main package
-def get_split_modules(d, prepend=""):
-    split_dir = d.getVar('PKGDEST', d)
-    split_files = ""
-    for dir in os.listdir(split_dir):
-        split_files = split_files + " " + str(prepend) + str(dir)
+# Override do_packagedata() function (was empty otherwise) in order to
+# dynamically add split kernel-modules created by this package into the
+# SSTATE_DUPWHITELIST variable so as to allow these modules to overwrite those
+# created by the kernel.
+python do_packagedata() {
+    # Python function that returns packages that were split from this main package
+    def get_split_modules(d, prepend=""):
+        split_dir = d.getVar('PKGDEST', True)
+        split_files = ""
+        for mod in os.listdir(split_dir):
+            if "kernel-module" in str(mod):
+                split_files += " " + str(prepend) + str(mod)
 
-    return str(split_files)
+        return str(split_files)
 
-# Add to duplicate files whitelist these specific kernel modules (full path req'd)
-SSTATE_DUPWHITELIST += "${@get_split_modules(d, d.getVar('PKGDATA_DIR', d) + '/runtime/')}"
-SSTATE_DUPWHITELIST += "${@get_split_modules(d, d.getVar('PKGDATA_DIR', d) + '/runtime-reverse/')}"
+    def pop_whitelist(d):
+        runtime_vars = get_split_modules(d, d.getVar('PKGDATA_DIR', True) + '/runtime/')
+        reverse_vars = get_split_modules(d, d.getVar('PKGDATA_DIR', True) + '/runtime-reverse/')
+
+        # Add to duplicate files whitelist these specific kernel modules (full path req'd)
+        d.setVar('SSTATE_DUPWHITELIST', d.getVar('SSTATE_DUPWHITELIST', True) + " " + runtime_vars)
+        d.setVar('SSTATE_DUPWHITELIST', d.getVar('SSTATE_DUPWHITELIST', True) + " " + reverse_vars)
+
+    pop_whitelist(d)
+}
