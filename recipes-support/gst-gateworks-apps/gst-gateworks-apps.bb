@@ -8,11 +8,11 @@ DEPENDS += " \
     gstreamer1.0-plugins-imx \
 "
 
-PR = "r1"
+PR = "r2"
 
-PV = "1.2+${SRCPV}"
+PV = "1.4+${SRCPV}"
 SRC_BRANCH = "master"
-SRCREV = "b073057fa6ddcee501dc3e24889c4c7ed128e284"
+SRCREV = "490564815d8049dbdd79087f546835b673ba6e88"
 SRC_URI = "git://github.com/Gateworks/gst-gateworks-apps;protocol=git;branch=${SRC_BRANCH}"
 
 S = "${WORKDIR}/git"
