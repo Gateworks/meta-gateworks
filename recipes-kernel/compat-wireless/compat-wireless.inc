@@ -12,8 +12,7 @@ EXCLUDE_FROM_WORLD = "1"
 
 SRC_URI = "\
 	file://0001-disable_kconf.patch \
-	file://0002-define_reinit.patch \
-	file://0003-add-KLIB_CONFIG.patch \
+	file://0002-add-KLIB_CONFIG.patch \
 "
 
 COMPAT_WIRELESS_VERSION = "${PV}-1"
