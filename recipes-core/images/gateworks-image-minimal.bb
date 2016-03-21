@@ -41,7 +41,6 @@ IMAGE_INSTALL += " \
     bridge-utils \
     canutils \
     compat-wireless-all \
-    crda \
     dnsmasq \
     dropbear \
     ethtool \
