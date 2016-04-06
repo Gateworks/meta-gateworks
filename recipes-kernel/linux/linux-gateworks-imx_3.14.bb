@@ -4,12 +4,12 @@
 require recipes-kernel/linux/linux-imx.inc
 require recipes-kernel/linux/linux-dtb.inc
 
-PR = "r12"
+PR = "r13"
 
 DEPENDS += "lzop-native bc-native"
 
 # override URI of source and PR for Gateworks linux-imx kernel
-SRCREV = "3ae25e0dd3134b8f49270eee3b4a49733ff7eb05"
+SRCREV = "07ca760d0e21715cb0dd2d3202de89056a00fdc1"
 SRC_BRANCH = "gateworks_fslc_3.14_1.0.x_ga"
 LOCALVERSION = "-1.0.x_ga+yocto"
 SRC_URI = "git://github.com/Gateworks/linux-imx6.git;protocol=http;branch=${SRC_BRANCH}"
