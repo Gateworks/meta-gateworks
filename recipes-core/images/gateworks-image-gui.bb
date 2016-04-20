@@ -1,4 +1,4 @@
-require gateworks-image-test.bb
+require gateworks-image-gui.bb
 
 DESCRIPTION = "A simple X11 based image that includes a web browser"
 
