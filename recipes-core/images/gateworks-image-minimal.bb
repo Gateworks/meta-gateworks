@@ -20,6 +20,7 @@ IMAGE_INSTALL += " \
     gsc-update \
     gwsoc \
     i2c-tools \
+    imx-kobs \
     iperf \
     iperf3 \
     memtester \
