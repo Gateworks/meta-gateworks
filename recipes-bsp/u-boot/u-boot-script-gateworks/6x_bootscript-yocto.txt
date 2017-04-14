@@ -1,4 +1,4 @@
-setenv _bscriptver "v1.06"
+setenv _bscriptver "v1.07"
 
 echo "## Gateworks Ventana Yocto Bootscript ${_bscriptver} ####################"
 
@@ -13,15 +13,8 @@ if test -z "${mem}" ; then
 	setenv mem "cma=96M"
     elif itest.s "x${mem_mb}" == "x512" ; then
 	setenv mem "cma=192M"
-    elif itest.s "x${mem_mb}" == "x1024" ; then
-	setenv mem "cma=384M"
-    elif itest.s "x${mem_mb}" == "x2048" ; then
-	setenv mem "cma=384M"
-    elif itest.s "x${mem_mb}" == "x4096" ; then
-	setenv mem "cma=384M"
     else
-	echo "Unable to pigeonhole memory. Defaulting CMA to 96M."
-	setenv mem "cma=96M"
+	setenv mem "cma=384M"
     fi
 fi
 
