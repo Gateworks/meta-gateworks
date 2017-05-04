@@ -1,19 +1,23 @@
-meta-gateworks
-==============
+OpenEmbedded/Yocto BSP layer for Gateworks Ventana boards
+=========================================================
 
-OpenEmbedded/Yocto BSP layer for Gateworks Ventana Platform
+This layer provides recipes for use with OpenEmbedded and/or Yocto
+specific to Gateworks Ventana boards.
 
 This layer depends on:
 
-poky/meta
-meta-oe/meta-oe
-meta-oe/meta-networking
-meta-fsl-arm \
-meta-fsl-arm-extra \
-meta-fsl-demos \
+URI: git://git.openembedded.org/openembedded-core
+branch: master
+revision: HEAD
 
-It is best to get started using the repo manifest available at
-https://github.com/Gateworks/gateworks-yocto-bsp-platform
+Contributing
+------------
 
-For detailed build instructions see
-http://trac.gateworks.com/wiki/OpenEmbedded/Building
+To contribute to this layer you should the patches for review to the
+Meta-Gateworks mailing list meta-gateworks@lists.gateworks.com
+and please cc the maintainers.
+
+Maintainers: Tim Harvey <tharvey@gateworks.com>
+
+When sending single patches, please use something like :
+git send-email -1 -s --to meta-gateworks@lists.gateworks.com
