@@ -21,7 +21,7 @@ IMAGE_INSTALL += " \
     gwsoc \
     i2c-tools \
     imx-kobs \
-    iperf \
+    iperf3 \
     iperf3 \
     memtester \
     mtd-utils \
@@ -53,4 +53,31 @@ IMAGE_INSTALL += " \
     linuxptp \
     wireless-tools \
     wpa-supplicant \
+"
+
+# Crypto
+IMAGE_INSTALL += " \
+    cryptodev-module \
+"
+
+# Scripting
+IMAGE_INSTALL += " \
+    perl \
+    \
+    python \
+    python-codecs \
+    python-crypt \
+    python-datetime \
+    python-dbus \
+    python-io \
+    python-logging \
+    python-math \
+    python-mime \
+    python-netclient \
+    python-pickle \
+    python-pygobject \
+    python-stringold \
+    python-textutils \
+    python-threading \
+    python-xml \
 "
