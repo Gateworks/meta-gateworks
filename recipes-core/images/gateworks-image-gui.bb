@@ -15,7 +15,6 @@ IMAGE_INSTALL += "\
 # FSL Specific Packages
 IMAGE_INSTALL += "\
     packagegroup-fsl-tools-gpu \
-    vivante-gpu-sdk \
 "
 
 # Only build large ubi image
