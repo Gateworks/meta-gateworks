@@ -6,7 +6,7 @@ SECTION = "console/utils"
 RDEPENDS_${PN} = " \
     bash \
     packagegroup-fsl-gstreamer1.0-full \
-    alsa-utils alsa-lib alsa-state \
+    libasound alsa-utils alsa-state \
     fb-test fbset \
     v4l-utils \
 "
