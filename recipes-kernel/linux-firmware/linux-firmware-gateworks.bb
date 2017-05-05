@@ -7,16 +7,15 @@ SECTION = "kernel"
 # Choosing proprietary license because licenses differ per firmware binary
 LICENSE = "Proprietary"
 
-LIC_FILES_CHKSUM = "file://LICENCE.iwlwifi_firmware;md5=5106226b2863d00d8ed553221ddf8cd2 \
+LIC_FILES_CHKSUM = "file://LICENCE.iwlwifi_firmware;md5=3fd842911ea93c29cd32679aa23e1c88 \
                     file://LICENCE.ibt_firmware;md5=fdbee1ddfe0fb7ab0b2fcd6b454a366b \
                     file://LICENCE.atheros_firmware;md5=30a14c7823beedac9fa39c64fdd01a13 \
                    "
 
 inherit allarch
 
-# Using latest (20140902) rev of linux-firmware
-SRCREV = "f66291398181d24856fd2d19454d246199abd5ea"
-PE = "1"
+SRCREV = "ade8332383e228cbdcfc605b5e5ef3aa51211401"
+PE = "20170422"
 PV = "0.0+git${SRCPV}"
 
 SRC_URI = "git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git"
