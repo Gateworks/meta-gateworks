@@ -1,22 +1,9 @@
+#
+# The boot device on Ventana boards vary between NAND flash and microSD/eMMC.
+# Therefore we will use a postinst script to detect at install time the
+# presence of NAND flash and install the correct /etc/fw_env.config file
+#
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
-
-DESCRIPTION = "u-boot-fw-utils overrides for Gateworks Ventana Family SBC's"
-LICENSE = "GPLv2+"
-LIC_FILES_CHKSUM = "file://Licenses/README;md5=c7383a594871c03da76b3707929d2919"
-
-PV = "v2015.04+git${SRCPV}"
-
-SRCREV = "1c2abb3c753d25e4d11252e0319bdfc8634e7efb"
-SRC_URI = " \
-    git://github.com/Gateworks/u-boot-imx6.git;branch=gateworks_v2015.04 \
-    file://fw_env_nand.config \
-    file://fw_env_usd.config \
-"
-
-do_install_append() {
-    install -m 0644 ${WORKDIR}/fw_env_nand.config ${D}${sysconfdir}/fw_env_nand.config
-    install -m 0644 ${WORKDIR}/fw_env_usd.config ${D}${sysconfdir}/fw_env_usd.config
-}
 
 pkg_postinst_${PN}() {
 #!/bin/sh -e
@@ -24,14 +11,23 @@ pkg_postinst_${PN}() {
 if [ x"$D" = "x" ]; then # Only run on boot time
     cd ${sysconfdir}
     if [ -c /dev/mtd1 ]; then
-        ln -sf fw_env_nand.config fw_env.config
+         cat << EOF > "${sysconfdir}/fw_env.config"
+# NAND Flash
+# MTD device name       Device offset   Env. size       Flash sector size      Number of sectors
+/dev/mtd1               0x00000         0x20000         0x40000
+/dev/mtd1               0x80000         0x20000         0x40000
+EOF
     else
-        ln -sf fw_env_usd.config fw_env.config
+         cat << EOF > "${sysconfdir}/fw_env.config"
+# microSD/MMC
+# MTD device name       Device offset   Env. size       Flash sector size      Number of sectors
+/dev/mmcblk0            0xb1400         0x20000         0x20000
+/dev/mmcblk0            0xd1400         0x20000         0x20000
+EOF
     fi
 else
     exit 1
 fi
 }
 
-PACKAGE_ARCH = "${MACHINE_ARCH}"
 COMPATIBLE_MACHINE = "(ventana)"
