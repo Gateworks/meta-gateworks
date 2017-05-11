@@ -49,10 +49,18 @@ IMAGE_INSTALL += " \
     hostapd-conf \
     iproute2 \
     iw \
-    linux-firmware-gateworks \
     linuxptp \
     wireless-tools \
     wpa-supplicant \
+"
+
+# Firmware
+IMAGE_INSTALL += " \
+    linux-firmware-ath10k \
+    linux-firmware-ath9k \
+    linux-firmware-iwlwifi-7260 \
+    linux-firmware-iwlwifi-7265 \
+    linux-firmware-ar3k \
 "
 
 # Crypto
