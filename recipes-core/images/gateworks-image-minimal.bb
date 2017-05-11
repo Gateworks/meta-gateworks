@@ -35,6 +35,7 @@ IMAGE_INSTALL += " \
     usbutils \
     v4l-utils \
     watchdog \
+    file \
 "
 
 # Wireless/Networking Packages
