@@ -40,6 +40,7 @@ IMAGE_INSTALL += " \
 # Wireless/Networking Packages
 IMAGE_INSTALL += " \
     bridge-utils \
+    iptables \
     canutils \
     compat-wireless-all \
     dnsmasq \
