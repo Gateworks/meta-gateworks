@@ -10,6 +10,7 @@ IMAGE_FEATURES += "x11-base x11-sato hwcodecs"
 IMAGE_INSTALL += "\
     packagegroup-core-x11-sato \
     epiphany \
+    mesa-demos \
 "
 
 # FSL Specific Packages
