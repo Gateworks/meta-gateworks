@@ -16,14 +16,14 @@ inherit allarch
 
 SRCREV = "ade8332383e228cbdcfc605b5e5ef3aa51211401"
 PE = "20170422"
-PV = "0.0+git${SRCPV}"
+PV = "0.1+git${SRCPV}"
 
 SRC_URI = "git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git"
 
 S = "${WORKDIR}/git"
 
 # Firmware to install onto rootfs + any licenses
-INSTALL_FW = "ar3k/*.dfu intel/*.bseq iwlwifi-7260-9.ucode \
+INSTALL_FW = "ar3k/*.dfu intel/*.bseq iwlwifi-7260-*.ucode \
               LICENCE.atheros_firmware LICENCE.ibt_firmware LICENCE.iwlwifi_firmware"
 
 do_compile() {
