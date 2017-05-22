@@ -9,7 +9,7 @@ RDEPENDS_${PN} = " \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-imx \
-    gstreamer1.0-plugins-ugly \
+    ${@bb.utils.contains('LICENSE_FLAGS_WHITELIST', 'commercial', 'gstreamer1.0-plugins-ugly', '', d)} \
     libasound alsa-utils alsa-state \
     fb-test fbset \
     v4l-utils \
