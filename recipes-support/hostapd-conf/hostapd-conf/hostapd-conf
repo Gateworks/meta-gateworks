@@ -556,7 +556,7 @@ get_vht_capab() {
     IEEE80211AC=1
     [ $(cb "${vht_cap}" "0x10") ] && VHT_CAPAB="${VHT_CAPAB}[RXLDPC]"
     [ $(cb "${vht_cap}" "0x20") ] && VHT_CAPAB="${VHT_CAPAB}[SHORT-GI-80]"
-    [ $(cb "${vht_cap}" "0x40") ] && VHT_CAPAB="${VHT_CAPAB}[SHORT-GI-160]"o
+    [ $(cb "${vht_cap}" "0x40") ] && VHT_CAPAB="${VHT_CAPAB}[SHORT-GI-160]"
     [ $(cb "${vht_cap}" "0x80") ] && VHT_CAPAB="${VHT_CAPAB}[TX-STBC-2BY1]"
     [ $(cb "${vht_cap}" "0x800") ] && VHT_CAPAB="${VHT_CAPAB}[SU-BEAMFORMER]"
     [ $(cb "${vht_cap}" "0x1000") ] && VHT_CAPAB="${VHT_CAPAB}[SU-BEAMFORMEE]"
@@ -605,7 +605,7 @@ write_hostapd_conf() {
 
     cat <<EOF | grep . > ${conf_file}
 # For more options, please visit the following:
-#  http://linuxwireless.org/en/users/Documentation/hostapd/
+#  https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf
 
 driver=${DRIVER}
 logger_syslog=-1
