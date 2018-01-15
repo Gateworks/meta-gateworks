@@ -720,7 +720,7 @@ while [ "${1}" ]; do
                    };;
                 4|5)
                     case "${1}" in
-                        *HT[248]*) HTMODE="${1}";;
+                        HT*|VHT*) HTMODE="${1}";;
                         *) PASSPHRASE="${1}";;
                     esac
                     ;;
