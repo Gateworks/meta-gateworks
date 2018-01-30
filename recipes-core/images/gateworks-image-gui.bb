@@ -18,5 +18,21 @@ IMAGE_INSTALL += "\
     packagegroup-fsl-tools-gpu \
 "
 
+# Qt5 Demo
+IMAGE_INSTALL += "\
+   qtbase \
+   qtbase-plugins \
+   qtdeclarative \
+   qtdeclarative-plugins \
+   qtdeclarative-qmlplugins \
+   qtimageformats \
+   qtimageformats-plugins \
+   qtdeclarative-tools \
+   qtgraphicaleffects-qmlplugins \
+   qtquickcontrols-qmlplugins \
+   qtquickcontrols2-qmlplugins \
+   qtglviddemo \
+"
+
 # Only build large ubi image
 MULTIUBI_BUILD = "large"
