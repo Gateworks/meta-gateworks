@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Qt5 GL Video Demo
+Comment=Run the Qt5 GL Video Demo
+Exec=qtglviddemo -c /etc/qtglviddemo.cfg
+Type=Application
+Icon=qt_logo100w.png
+Categories=System
