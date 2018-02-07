@@ -33,6 +33,14 @@ install_extra_files() {
         install -m 0644 ${WORKDIR}/gwlogo_2400.png ${D}${datadir}/qtglviddemo
 }
 
+SRC_URI += "file://qt_logo100.png file://qtglviddemo.desktop"
+do_install_append() {
+	install -d ${D}/${datadir}/pixmaps
+	install -d ${D}/${datadir}/applications
+	install -m 0644 ${WORKDIR}/qt_logo100.png ${D}/${datadir}/pixmaps
+	install -m 0644 ${WORKDIR}/qtglviddemo.desktop ${D}/${datadir}/applications
+}
+
 do_install[postfuncs] += " install_extra_files "
 
 FILES_${PN} += "${datadir}/qtglviddemo/gwlogo_2400.png ${sysconfdir}/qtglviddemo.cfg"
