@@ -1,6 +1,6 @@
 DESCRIPTION = "Gateworks GStreamer Sample Applications"
-LICENSE = "GPLv3"
-LIC_FILES_CHKSUM = "file://COPYING;md5=d32239bcb673463ab874e80d47fae504"
+LICENSE = "LGPLv3"
+LIC_FILES_CHKSUM = "file://COPYING;md5=3000208d539ec061b899bce1d9ce9404"
 
 DEPENDS += " \
     gstreamer1.0 \
@@ -8,11 +8,11 @@ DEPENDS += " \
     gstreamer1.0-plugins-imx \
 "
 
-PR = "r2"
+PR = "r3"
 
 PV = "1.4+${SRCPV}"
 SRC_BRANCH = "master"
-SRCREV = "490564815d8049dbdd79087f546835b673ba6e88"
+SRCREV = "f4c2a4ba2100958eaee9bdbb133cfe22846c707d"
 SRC_URI = "git://github.com/Gateworks/gst-gateworks-apps;protocol=git;branch=${SRC_BRANCH}"
 
 S = "${WORKDIR}/git"
