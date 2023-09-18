@@ -272,7 +272,7 @@ get_htmodes_band() {
     get_band_lineno lineno_start lineno_end "${band}" "${phy}"
 
     ht_cap=$(iw phy ${phy} info | sed -n "$lineno_start","$lineno_end"p \
-                    | grep "Capabilities: " | cut -d" " -f2)
+                    | grep "Capabilities: 0x" | cut -d" " -f2)
     vht_cap=$(iw phy ${phy} info | sed -n "$lineno_start","$lineno_end"p \
                      | grep "VHT C" |cut -d"(" -f2|cut -d")" -f1)
 
